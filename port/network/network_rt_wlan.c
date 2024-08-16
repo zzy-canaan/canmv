@@ -251,6 +251,12 @@ typedef struct _py_rt_wlan_obj_t {
 
 STATIC int s_wlan_mgmt_dev_fd = -1;
 
+STATIC mp_obj_t network_rt_wlan_active(size_t n_args, const mp_obj_t *args) {
+    mp_printf(&mp_plat_print, "rtwlan not support active.\n");
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(network_rt_wlan_active_obj, 1, 2, network_rt_wlan_active);
+
 STATIC mp_obj_t network_rt_wlan_scan(size_t n_args, const mp_obj_t *args) {
     CHECK_FD_VALID();
 
@@ -268,7 +274,8 @@ STATIC mp_obj_t network_rt_wlan_scan(size_t n_args, const mp_obj_t *args) {
     scan_result_info_size = sizeof(struct rt_wlan_info) * RT_WLAN_STA_SCAN_MAX_AP;
     scan_result = (struct rt_wlan_scan_result *)malloc(sizeof(struct rt_wlan_scan_result) + scan_result_info_size);
     if(NULL == scan_result) {
-        mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("no memory for scan result"));
+        mp_printf(&mp_plat_print, "no memory for scan result.\n");
+        return mp_const_none;
     }
     memset(scan_result, 0, sizeof(struct rt_wlan_scan_result) + scan_result_info_size);
 
@@ -285,8 +292,8 @@ STATIC mp_obj_t network_rt_wlan_scan(size_t n_args, const mp_obj_t *args) {
     }
 
     if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_SCAN, scan_result)) {
-        free(scan_result);
-        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run scan failed"));
+        scan_result->num = 0;
+        mp_printf(&mp_plat_print, "run scan failed.\n");
     }
     scan_list = mp_obj_new_list(0, NULL);
 
@@ -340,8 +347,6 @@ STATIC mp_obj_t network_rt_wlan_connect(mp_uint_t n_args, const mp_obj_t *pos_ar
         strncpy((char *)&config.ssid.val[0], ssid, RT_WLAN_SSID_MAX_LENGTH);
         config.ssid.val[ssid_len] = '\0';
     } else if (mp_const_none != args[ARG_info].u_obj) {
-        mp_raise_msg(&mp_type_NotImplementedError, MP_ERROR_TEXT("TODO: support connect ap"));
-
         struct rt_wlan_info *info = py_rt_wlan_info_cobj(args[ARG_info].u_obj);
         config.use_info = 1;
         memcpy(&config.info, info, sizeof(struct rt_wlan_info));
@@ -366,15 +371,17 @@ STATIC mp_obj_t network_rt_wlan_connect(mp_uint_t n_args, const mp_obj_t *pos_ar
 
     if(MOD_NETWORK_STA_IF == self->itf) {
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_CONNECT, &config)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run connect failed"));
+            mp_printf(&mp_plat_print, "run connect failed.\n");
+            return mp_const_false;
         }
     } else {
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_START, &config)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("start ap failed"));
+            mp_printf(&mp_plat_print, "start ap failed.\n");
+            return mp_const_false;
         }
     }
 
-    return mp_const_none;
+    return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(network_rt_wlan_connect_obj, 1, network_rt_wlan_connect);
 
@@ -385,7 +392,8 @@ STATIC mp_obj_t network_rt_wlan_disconnect(size_t n_args, const mp_obj_t *args) 
 
     if(MOD_NETWORK_STA_IF == self->itf) {
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_DISCONNECT, NULL)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run disconnect failed"));
+            mp_printf(&mp_plat_print, "run disconnect failed.\n");
+            return mp_const_false;
         }
     } else {
         uint8_t mac[6];
@@ -395,11 +403,12 @@ STATIC mp_obj_t network_rt_wlan_disconnect(size_t n_args, const mp_obj_t *args) 
             mac[i] = (uint8_t)mp_obj_get_int(items[i]);
         }
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_DEAUTH_STA, mac)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run ap deauth failed"));
+            mp_printf(&mp_plat_print, "run ap deauth failed.\n");
+            return mp_const_false;
         }
     }
 
-    return mp_const_none;
+    return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(network_rt_wlan_disconnect_obj, 1, 2, network_rt_wlan_disconnect);
 
@@ -414,7 +423,8 @@ STATIC mp_obj_t network_rt_wlan_isconnected(mp_obj_t self_in) {
     }
 
     if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_IS_CONNECTED, &status)) {
-        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run isconnected failed"));
+        status = false;
+        mp_printf(&mp_plat_print, "run isconnected failed.\n");
     }
 
     return mp_obj_new_bool(status);
@@ -443,7 +453,8 @@ STATIC mp_obj_t network_rt_wlan_ifconfig(size_t n_args, const mp_obj_t *args) {
         ifconfig.set = 0;
 
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_NET_IFCONFIG, &ifconfig)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run ifconfig failed"));
+            mp_printf(&mp_plat_print, "run ifconfig failed.\n");
+            return mp_const_none;
         }
 
         mp_obj_t tuple[4] = {
@@ -466,10 +477,11 @@ STATIC mp_obj_t network_rt_wlan_ifconfig(size_t n_args, const mp_obj_t *args) {
         netutils_parse_ipv4_addr(items[3], (uint8_t *)&ifconfig.dns.addr, NETUTILS_BIG);
 
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_NET_IFCONFIG, &ifconfig)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run ifconfig failed"));
+            mp_printf(&mp_plat_print, "run ifconfig failed.\n");
+            return mp_const_false;
         }
 
-        return mp_const_none;
+        return mp_const_true;
     }
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(network_rt_wlan_ifconfig_obj, 1, 2, network_rt_wlan_ifconfig);
@@ -483,7 +495,7 @@ STATIC mp_obj_t _network_rt_wlan_sta_config(size_t n_args, const mp_obj_t *pos_a
     if (kw_args->used == 0) {
         // Get config value
         if (n_args != 2) {
-            mp_raise_TypeError(MP_ERROR_TEXT("must query one param"));
+            mp_raise_TypeError(MP_ERROR_TEXT("must query one param.\n"));
         }
         qstr attr = mp_obj_str_get_qstr(pos_args[1]);
 
@@ -492,7 +504,8 @@ STATIC mp_obj_t _network_rt_wlan_sta_config(size_t n_args, const mp_obj_t *pos_a
                 uint8_t mac[6];
 
                 if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_GET_MAC, mac)) {
-                    mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run get mac failed"));
+                    mp_printf(&mp_plat_print, "run get mac failed.\n");
+                    return mp_const_none;
                 }
 
                 return mp_obj_new_bytes(mac, sizeof(mac));
@@ -501,7 +514,8 @@ STATIC mp_obj_t _network_rt_wlan_sta_config(size_t n_args, const mp_obj_t *pos_a
                 int auto_reconnect = 0;
 
                 if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_GET_AUTO_RECONNECT, &auto_reconnect)) {
-                    mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run get auto reconnect failed"));
+                    auto_reconnect = 0;
+                    mp_printf(&mp_plat_print, "run get auto reconnect failed.\n");
                 }
                 return mp_obj_new_bool(auto_reconnect);
             } break;
@@ -524,7 +538,8 @@ STATIC mp_obj_t _network_rt_wlan_sta_config(size_t n_args, const mp_obj_t *pos_a
             }
 
             if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_SET_MAC, mac)) {
-                mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run set mac failed"));
+                mp_printf(&mp_plat_print, "run set mac failed.\n");
+                return mp_const_false;
             }
         }
 
@@ -536,12 +551,13 @@ STATIC mp_obj_t _network_rt_wlan_sta_config(size_t n_args, const mp_obj_t *pos_a
             }
 
             if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_SET_AUTO_RECONNECT, &auto_reconnect)) {
-                mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run set auto_reconnect failed"));
+                mp_printf(&mp_plat_print, "run set auto_reconnect failed.\n");
+                return mp_const_false;
             }
         }
     }
 
-    return mp_const_none;
+    return mp_const_true;
 }
 
 STATIC mp_obj_t _network_rt_wlan_ap_config(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
@@ -562,7 +578,8 @@ STATIC mp_obj_t _network_rt_wlan_ap_config(size_t n_args, const mp_obj_t *pos_ar
                 struct rt_wlan_info info;
 
                 if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_GET_INFO, &info)) {
-                    mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run get ap info failed"));
+                    mp_printf(&mp_plat_print, "run get ap info failed.\n");
+                    return mp_const_none;
                 }
 
                 return py_rt_wlan_info_from_struct(&info);
@@ -570,7 +587,8 @@ STATIC mp_obj_t _network_rt_wlan_ap_config(size_t n_args, const mp_obj_t *pos_ar
             case MP_QSTR_country: {
                 int country = RT_COUNTRY_CHINA;
                 if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_GET_COUNTRY, &country)) {
-                    mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run get ap country failed"));
+                    country = -1;
+                    mp_printf(&mp_plat_print, "run get ap country failed.\n");
                 }
                 return MP_OBJ_NEW_SMALL_INT(country);
             } break;
@@ -595,12 +613,13 @@ STATIC mp_obj_t _network_rt_wlan_ap_config(size_t n_args, const mp_obj_t *pos_ar
         if((-1) != args[ARG_country].u_int) {
             int country = args[ARG_country].u_int;
             if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_SET_COUNTRY, &country)) {
-                mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run set ap country failed"));
+                mp_printf(&mp_plat_print, "run set ap country failed.\n");
+                return mp_const_false;
             }
         }
     }
 
-    return mp_const_none;
+    return mp_const_true;
 }
 
 STATIC mp_obj_t network_rt_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
@@ -627,7 +646,8 @@ STATIC mp_obj_t _network_rt_wlan_get_sta_status(size_t n_args, const mp_obj_t *a
             int rssi = -99;
 
             if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_GET_RSSI, &rssi)) {
-                mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run sta get rssi failed"));
+                rssi = -99;
+                mp_printf(&mp_plat_print, "run sta get rssi failed.\n");
             }
             return MP_OBJ_NEW_SMALL_INT(rssi);
         } break;
@@ -635,7 +655,8 @@ STATIC mp_obj_t _network_rt_wlan_get_sta_status(size_t n_args, const mp_obj_t *a
             struct rt_wlan_info info;
 
             if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_STA_GET_AP_INFO, &info)) {
-                mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run get ap info failed"));
+                mp_printf(&mp_plat_print, "run get ap info failed.\n");
+                return mp_const_none;
             }
 
             return py_rt_wlan_info_from_struct(&info);
@@ -653,7 +674,8 @@ STATIC mp_obj_t _network_rt_wlan_get_ap_status(size_t n_args, const mp_obj_t *ar
         int active = 0;
 
         if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_IS_ACTIVE, &active)) {
-            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run ap isactive failed"));
+            mp_printf(&mp_plat_print, "run ap isactive failed.\n");
+            return mp_const_false;
         }
         return mp_obj_new_bool(active);
     }
@@ -668,7 +690,8 @@ STATIC mp_obj_t _network_rt_wlan_get_ap_status(size_t n_args, const mp_obj_t *ar
             station_result_info_size = sizeof(struct rt_wlan_info) * max_ap_num;
             station_result = (struct rt_wlan_scan_result *)malloc(sizeof(struct rt_wlan_scan_result) + station_result_info_size);
             if(NULL == station_result) {
-                mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("no memory for connected station info"));
+                mp_printf(&mp_plat_print, "no memory for connected station info.\n");
+                return mp_const_none;
             }
             memset(station_result, 0, sizeof(struct rt_wlan_scan_result) + station_result_info_size);
 
@@ -677,7 +700,8 @@ STATIC mp_obj_t _network_rt_wlan_get_ap_status(size_t n_args, const mp_obj_t *ar
 
             if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_GET_STA_INFO, station_result)) {
                 free(station_result);
-                mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run ap get connected station info failed"));
+                mp_printf(&mp_plat_print, "run ap get connected station info failed.\n");
+                return mp_const_none;
             }
 
             mp_obj_t station_list = mp_obj_new_list(0, NULL);
@@ -717,15 +741,28 @@ STATIC mp_obj_t network_rt_wlan_stop(mp_obj_t self_in) {
     }
 
     if(0x00 != ioctl(s_wlan_mgmt_dev_fd, IOCTRL_WM_AP_STOP, NULL)) {
-        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("run stop failed"));
+        mp_printf(&mp_plat_print, "run stop failed.\n");
+        return mp_const_false;
     }
 
-    return mp_const_none;
+    return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(network_rt_wlan_stop_obj, network_rt_wlan_stop);
 
 /* NIC Protocol **************************************************************/
 STATIC void network_rt_wlan_socket_close(struct _mod_network_socket_obj_t *socket);
+
+// STATIC int network_rt_wlan_socket_get_error(mod_network_socket_obj_t *_socket) {
+//     int optval;
+//     socklen_t optlen = sizeof(optval);
+
+//     if (getsockopt(_socket->fileno, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
+//         debug_printf("socket_getsockopt() -> errno %d\n", errno);
+//         return -1;
+//     }
+
+//     return optval;
+// }
 
 STATIC int network_rt_wlan_socket_poll(mod_network_socket_obj_t *_socket, uint32_t rwf, int *_errno) {
 #if 0 // not support now
@@ -764,7 +801,6 @@ STATIC int network_rt_wlan_socket_poll(mod_network_socket_obj_t *_socket, uint32
 }
 
 STATIC int network_rt_wlan_socke_setblocking(mod_network_socket_obj_t *_socket, bool blocking, int *_errno) {
-#if 0 // not support now
     int nonblocking = !blocking;
     // set socket in non-blocking mode
     if (ioctl(_socket->fileno, FIONBIO, &nonblocking) < 0) {
@@ -772,7 +808,7 @@ STATIC int network_rt_wlan_socke_setblocking(mod_network_socket_obj_t *_socket, 
         network_rt_wlan_socket_close(_socket->fileno);
         return -1;
     }
-#endif
+
     return 0;
 }
 
@@ -789,10 +825,10 @@ STATIC int network_rt_wlan_socket_listening(mod_network_socket_obj_t *_socket, i
     return optval;
 }
 
-STATIC mp_uint_t network_rt_wlan_socket_auto_bind(mod_network_socket_obj_t *socket, int *_errno) {
+STATIC mp_uint_t network_rt_wlan_socket_auto_bind(mod_network_socket_obj_t *_socket, int *_errno) {
 #if 0 // not support now
-    debug_printf("socket_autobind(%d)\n", socket->fileno);
-    if (socket->bound == false && socket->type != MOD_NETWORK_SOCK_RAW) {
+    debug_printf("socket_autobind(%d)\n", _socket->fileno);
+    if (_socket->bound == false && _socket->type != MOD_NETWORK_SOCK_RAW) {
         if (network_rt_wlan_socket_bind(socket, NULL, bind_port, _errno) != 0) {
             *_errno = errno;
             debug_printf("socket_bind() -> errno %d\n", *_errno);
@@ -822,7 +858,7 @@ STATIC int network_rt_wlan_socket_gethostbyname(mp_obj_t nic, const char *name, 
     int err = 0;
 
     if(len > 256) {
-        mp_printf(&mp_plat_print, "Host name length max 256 bytes");
+        mp_printf(&mp_plat_print, "Host name length max 256 bytes.\n");
         return -3;
     }
 
@@ -885,7 +921,14 @@ STATIC int network_rt_wlan_socket_socket(struct _mod_network_socket_obj_t *_sock
     _socket->bound = false;
     _socket->callback = MP_OBJ_NULL;
 
-    return network_rt_wlan_socke_setblocking(_socket, false, _errno);
+    // default set recv timeout
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 50 * 1000;
+
+    return setsockopt(_socket->fileno, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    // return 0; // network_rt_wlan_socke_setblocking(_socket, false, _errno);
 }
 
 STATIC void network_rt_wlan_socket_close(struct _mod_network_socket_obj_t *socket)
@@ -915,7 +958,7 @@ STATIC int network_rt_wlan_socket_bind(struct _mod_network_socket_obj_t *_socket
     int ret = bind(_socket->fileno, (struct sockaddr*)&addr, sizeof(addr));
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
         debug_printf("socket_bind(%d, %d) -> errno: %d\n", _socket->fileno, port, *_errno);
         return -1;
     }
@@ -933,7 +976,7 @@ STATIC int network_rt_wlan_socket_listen(struct _mod_network_socket_obj_t *_sock
     int ret = listen(_socket->fileno, backlog);
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
         debug_printf("socket_listen() -> errno %d\n", *_errno);
         return -1;
     }
@@ -952,17 +995,27 @@ STATIC int network_rt_wlan_socket_accept(struct _mod_network_socket_obj_t *_sock
     struct sockaddr_in addr;
     int addrlen = sizeof(addr);
     addr.sin_family = _socket->domain;
-    addr.sin_port = htons(port);
-    memcpy(&addr.sin_addr, ip, MOD_NETWORK_IPADDR_BUF_SIZE);
 
     *port = 0;
-    int fd = accept(_socket->fileno, (struct sockaddr*)&addr, (socklen_t*)&addrlen);
+    int fd = -1;
+
+    do {
+        fd = accept(_socket->fileno, (struct sockaddr*)&addr, (socklen_t*)&addrlen);
+        if((0 <= fd) || (EAGAIN != errno)) {
+            break;
+        }
+        mp_hal_delay_ms(100);
+    } while(0 > fd);
+
     if (fd < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
         debug_printf("socket_accept() -> errno %d\n", *_errno);
         return -1;
     }
+
+    *port = ntohs(addr.sin_port);
+    memcpy(ip, &addr.sin_addr.s_addr, sizeof(addr.sin_addr));
 
     // set socket state
     socket2->fileno = fd;
@@ -970,7 +1023,14 @@ STATIC int network_rt_wlan_socket_accept(struct _mod_network_socket_obj_t *_sock
     socket2->timeout = -1;
     socket2->callback = MP_OBJ_NULL;
 
-    return network_rt_wlan_socke_setblocking(socket2, false, _errno);
+    // default set recv timeout
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 50 * 1000;
+
+    return setsockopt(socket2->fileno, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    // return 0; // network_rt_wlan_socke_setblocking(socket2, false, _errno);
 }
 
 STATIC int network_rt_wlan_socket_connect(struct _mod_network_socket_obj_t *_socket, byte *ip, mp_uint_t port, int *_errno)
@@ -987,7 +1047,7 @@ STATIC int network_rt_wlan_socket_connect(struct _mod_network_socket_obj_t *_soc
         *_errno = errno;
         debug_printf("socket_connect() -> errno %d\n", *_errno);
 
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
 
         // Poll for write.
         // if (_socket->timeout == 0 ||
@@ -1012,7 +1072,7 @@ STATIC mp_uint_t network_rt_wlan_socket_send(struct _mod_network_socket_obj_t *_
     int ret = send(_socket->fileno, buf, len, 0);
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
         debug_printf("socket_send() -> errno %d\n", *_errno);
         return -1;
     }
@@ -1021,7 +1081,7 @@ STATIC mp_uint_t network_rt_wlan_socket_send(struct _mod_network_socket_obj_t *_
 
 STATIC mp_uint_t network_rt_wlan_socket_recv(struct _mod_network_socket_obj_t *_socket, byte *buf, mp_uint_t len, int *_errno)
 {
-    debug_printf("socket_recv(%d)\n", _socket->fileno);
+    debug_printf("socket_recv(%d), len %d\n", _socket->fileno, len);
 
     // check if socket in listening state.
     if (network_rt_wlan_socket_listening(_socket, _errno) == 1) {
@@ -1036,13 +1096,18 @@ STATIC mp_uint_t network_rt_wlan_socket_recv(struct _mod_network_socket_obj_t *_
     int ret = recv(_socket->fileno, buf, len, 0);
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
-        debug_printf("socket_recv() -> errno %d\n", *_errno);
+        debug_printf("socket_recv() -> errno %d %d\n", *_errno, ret);
+        // network_rt_wlan_socket_close(_socket);
+
+        if(EAGAIN == *_errno) {
+            return 0;
+        }
+
         return -1;
     }
+
     return ret;
 }
-
 
 STATIC mp_uint_t network_rt_wlan_socket_sendto(struct _mod_network_socket_obj_t *_socket, const byte *buf, mp_uint_t len, byte *ip, mp_uint_t port, int *_errno)
 {
@@ -1064,7 +1129,7 @@ STATIC mp_uint_t network_rt_wlan_socket_sendto(struct _mod_network_socket_obj_t 
     int ret = sendto(_socket->fileno, buf, len, 0, (struct sockaddr *)&addr, sizeof(addr));
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
         return -1;
     }
     return ret;
@@ -1072,7 +1137,7 @@ STATIC mp_uint_t network_rt_wlan_socket_sendto(struct _mod_network_socket_obj_t 
 
 STATIC mp_uint_t network_rt_wlan_socket_recvfrom(struct _mod_network_socket_obj_t *_socket, byte *buf, mp_uint_t len, byte *ip, mp_uint_t *port, int *_errno)
 {
-    debug_printf("socket_recvfrom(%d)\n", _socket->fileno);
+    debug_printf("socket_recvfrom(%d), len %d\n", _socket->fileno, len);
     // Auto-bind the socket first if the socket is unbound.
     if (network_rt_wlan_socket_auto_bind(_socket, _errno) != 0) {
         return -1;
@@ -1085,17 +1150,24 @@ STATIC mp_uint_t network_rt_wlan_socket_recvfrom(struct _mod_network_socket_obj_
     struct sockaddr_in addr;
     socklen_t server_addr_len = sizeof(addr);
     addr.sin_family = _socket->domain;
-    addr.sin_port = htons(port);
-    memcpy(&addr.sin_addr, ip, MOD_NETWORK_IPADDR_BUF_SIZE);
 
     *port = 0;
     int ret = recvfrom(_socket->fileno, buf, len, 0, (struct sockaddr *)&addr, &server_addr_len);
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
         debug_printf("socket_recvfrom() -> errno %d\n", *_errno);
+        // network_rt_wlan_socket_close(_socket);
+
+        if(EAGAIN == *_errno) {
+            return 0;
+        }
+
         return -1;
     }
+
+    *port = ntohs(addr.sin_port);
+    memcpy(ip, &addr.sin_addr.s_addr, sizeof(addr.sin_addr));
+
     return ret;
 }
 
@@ -1114,7 +1186,7 @@ STATIC int network_rt_wlan_socket_setsockopt(struct _mod_network_socket_obj_t *_
     int ret = setsockopt(_socket->fileno, level, opt, optval, optlen);
     if (ret < 0) {
         *_errno = errno;
-        network_rt_wlan_socket_close(_socket);
+        // network_rt_wlan_socket_close(_socket);
         debug_printf("socket_setsockopt() -> errno %d\n", *_errno);
         return -1;
     }
@@ -1177,6 +1249,7 @@ STATIC int network_rt_wlan_socket_ioctl(struct _mod_network_socket_obj_t *_socke
 
 /* Constants *****************************************************************/
 STATIC const mp_rom_map_elem_t rt_wlan_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_active),              MP_ROM_PTR(&network_rt_wlan_active_obj) },
 // { MP_ROM_QSTR(MP_QSTR_scan),                    MP_ROM_PTR(&network_rt_wlan_scan_obj) },             // only for sta
 // { MP_ROM_QSTR(MP_QSTR_connect),                 MP_ROM_PTR(&network_rt_wlan_connect_obj) },          // only for sta
     { MP_ROM_QSTR(MP_QSTR_disconnect),              MP_ROM_PTR(&network_rt_wlan_disconnect_obj) },
