@@ -23,6 +23,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,6 +64,11 @@ STATIC void machine_adc_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
 STATIC mp_obj_t machine_adc_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, 1, true);
 
+    int channel = mp_obj_get_int(args[0]);
+    if (channel < 0 || channel >= ADC_CHANNEL_MAX) {
+        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("channel is invalid"));
+    }
+
     if (adc_fd < 0) {
         adc_fd = open(ADC_DEVIDE_NAME, O_RDWR);
         if (adc_fd < 0) {
@@ -70,9 +76,10 @@ STATIC mp_obj_t machine_adc_make_new(const mp_obj_type_t *type, size_t n_args, s
         }
     }
 
-    int channel = mp_obj_get_int(args[0]);
-    if (channel < 0 || channel >= ADC_CHANNEL_MAX) {
-        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("channel is invalid"));
+    /* RT_ADC_CMD_ENABLE = 0 */
+    uint32_t chn = channel;
+    if(0x00 != ioctl(adc_fd, 0, chn)) {
+        mp_raise_msg_varg(&mp_type_OSError, "adc enable channel %d failed", channel);
     }
 
     machine_adc_obj_t *self = mp_obj_malloc(machine_adc_obj_t, &machine_adc_type);
