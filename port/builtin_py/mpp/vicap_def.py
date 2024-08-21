@@ -98,24 +98,26 @@ def k_vicap_isp_pipe_ctrl_parse(s, kwargs):
 
 k_vicap_sensor_info_desc = {
     "name": 0 | uctypes.UINT64,
-    "width": 8 | uctypes.UINT16,
-    "height": 10 | uctypes.UINT16,
-    "csi_num": 12 | uctypes.UINT32,
-    "mipi_lanes": 16 | uctypes.UINT32,
-    "source_id": 20 | uctypes.UINT32,
-    "is_3d_sensor": 24 | uctypes.UINT32,
-    "phy_freq": 28 | uctypes.UINT32,
-    "data_type": 32 | uctypes.UINT32,
-    "hdr_mode": 36 | uctypes.UINT32,
-    "flash_mode": 40 | uctypes.UINT32,
-    "first_frame": 44 | uctypes.UINT32,
-    "glitch_filter": 48 | uctypes.UINT16,
-    "fps": 50 | uctypes.UINT16,
-    "type": 52 | uctypes.UINT32,
+    "dbname": 8 | uctypes.UINT64,
+    "width": 8+8 | uctypes.UINT16,
+    "height": 10+8 | uctypes.UINT16,
+    "csi_num": 12+8 | uctypes.UINT32,
+    "mipi_lanes": 16+8 | uctypes.UINT32,
+    "source_id": 20+8 | uctypes.UINT32,
+    "is_3d_sensor": 24+8 | uctypes.UINT32,
+    "phy_freq": 28+8 | uctypes.UINT32,
+    "data_type": 32+8 | uctypes.UINT32,
+    "hdr_mode": 36+8 | uctypes.UINT32,
+    "flash_mode": 40+8 | uctypes.UINT32,
+    "first_frame": 44+8 | uctypes.UINT32,
+    "glitch_filter": 48+8 | uctypes.UINT16,
+    "fps": 50+8 | uctypes.UINT16,
+    "type": 52+8 | uctypes.UINT32,
 }
 
 def k_vicap_sensor_info_parse(s, kwargs):
     s.name = kwargs.get("name", 0)
+    s.dbname = kwargs.get("dbname", 0)
     s.width = kwargs.get("width", 0)
     s.height = kwargs.get("height", 0)
     s.csi_num = kwargs.get("csi_num", 0)
@@ -169,11 +171,11 @@ k_vicap_dev_attr_desc = {
     "pipe_ctrl": (20, k_vicap_isp_pipe_ctrl_desc),
     "cpature_frame": 24 | uctypes.UINT32,
     "sensor_info": (32, k_vicap_sensor_info_desc),
-    "dw_enable": 88 | uctypes.UINT32,
-    "dev_enable": 92 | uctypes.UINT32,
-    "buffer_num": 96 | uctypes.UINT32,
-    "buffer_size": 100 | uctypes.UINT32,
-    "mirror": 104 | uctypes.UINT32,
+    "dw_enable": 88+8 | uctypes.UINT32,
+    "dev_enable": 92+8 | uctypes.UINT32,
+    "buffer_num": 96+8 | uctypes.UINT32,
+    "buffer_size": 100+8 | uctypes.UINT32,
+    "mirror": 104+8 | uctypes.UINT32,
 }
 
 def k_vicap_dev_attr_parse(s, kwargs):
