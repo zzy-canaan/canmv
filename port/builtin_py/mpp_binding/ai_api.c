@@ -32,12 +32,77 @@
 #include "py/obj.h"
 #include "mpi_ai_api.h"
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
+
 #define FUNC_IMPL
 #define FUNC_FILE "ai_func_def.h"
 #include "func_def.h"
 
+STATIC mp_obj_t ai_set_vol(mp_obj_t vol_obj) {
+    int fd = -1;
+    bool succ = true;
+    float vol_value = 30.0f - 50.0f;
+    mp_int_t vol = mp_obj_get_int(vol_obj);
+
+    if(0 > (fd = open("/dev/acodec_device", O_RDWR))) {
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open acodec_device device"));
+    }
+
+    vol_value += ((float)vol) * 0.5f;
+
+    if(vol_value > 30.0f) {
+        vol_value = 30.0f;
+    }
+
+    if((-97.0f) > vol_value) {
+        vol_value = -97.0f;
+    }
+
+    if(0x00 != ioctl(fd, 12, &vol_value)) {
+        succ = false; 
+        mp_printf(&mp_plat_print, "set mic[l] vol failed\n");
+    }
+    if(0x00 != ioctl(fd, 13, &vol_value)) {
+        succ = false; 
+        mp_printf(&mp_plat_print, "set mic[r] vol failed\n");
+    }
+
+    close(fd);
+
+    return mp_obj_new_bool(succ);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(ai_set_vol_obj, ai_set_vol);
+
+STATIC mp_obj_t ai_get_vol(void) {
+    int fd = -1;
+    float vol_value, volume_zero_value = 30.0f - 50.0f;
+    int vol;
+
+    if(0 > (fd = open("/dev/acodec_device", O_RDWR))) {
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open acodec_device device"));
+    }
+    if(0x00 != ioctl(fd, 26, &vol_value)) {
+        mp_printf(&mp_plat_print, "get mic[l] vol failed\n");
+    }
+    close(fd);
+
+    if((volume_zero_value) > vol_value) {
+        vol = 0;
+    } else if(30.0f < vol_value) {
+        vol = 100;
+    } else {
+        vol = (int)((vol_value - volume_zero_value) / 0.5f);
+    }
+
+    return MP_OBJ_NEW_SMALL_INT(vol);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(ai_get_vol_obj, ai_get_vol);
+
 STATIC const mp_rom_map_elem_t ai_api_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_ai_api) },
+    { MP_ROM_QSTR(MP_QSTR_ai_set_vol),  MP_ROM_PTR(&ai_set_vol_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ai_get_vol),  MP_ROM_PTR(&ai_get_vol_obj) },
 #define FUNC_ADD
 #define FUNC_FILE "ai_func_def.h"
 #include "func_def.h"

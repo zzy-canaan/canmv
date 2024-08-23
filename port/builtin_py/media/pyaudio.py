@@ -107,6 +107,9 @@ class Stream:
     def close(self):
         pass
 
+    def volume(self, vol = None):
+        pass
+
 class Write_stream(Stream):
     dev_chn_enable = {0:False,1:False}
     def __init__(self,
@@ -139,6 +142,7 @@ class Write_stream(Stream):
         PA_manager.initialize(frames_per_buffer)
         if (self._is_running):
             self.start_stream()
+        self.volume(60)
 
     def _init_audio_frame(self):
         if (self._audio_handle == -1):
@@ -214,6 +218,12 @@ class Write_stream(Stream):
         self._is_running = False
         self._parent._remove_stream(self)
 
+    def volume(self, vol = None):
+        if vol is None:
+            return ao_get_vol()
+        else:
+            ao_set_vol(vol)
+
 class Read_stream(Stream):
     dev_chn_enable = {0:False,1:False}
     def __init__(self,
@@ -245,6 +255,7 @@ class Read_stream(Stream):
         PA_manager.initialize(frames_per_buffer)
         if (self._is_running):
             self.start_stream()
+        self.volume(100)
 
     def start_stream(self):
         if (not self._start_stream):
@@ -305,6 +316,12 @@ class Read_stream(Stream):
     def close(self):
         self._is_running = False
         self._parent._remove_stream(self)
+
+    def volume(self, vol = None):
+        if vol is None:
+            return ai_get_vol()
+        else:
+            ai_set_vol(vol)
 
 class PyAudio:
     #vb init flag
