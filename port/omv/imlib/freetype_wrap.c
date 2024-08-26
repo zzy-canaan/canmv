@@ -67,13 +67,15 @@ static int imlib_freetype_init(const char *font_path)
     if(s_ft_init_flag) {
         if(s_ft_cacheManager) {
             FTC_Manager_Done(s_ft_cacheManager);
+            s_ft_cacheManager = NULL;
         }
         FT_Done_FreeType(s_ft_library);
+        s_ft_library = NULL;
     }
     s_ft_init_flag = 0;
     memset(s_ft_font_path, 0, sizeof(s_ft_font_path));
 
-    if ((res = f_open_helper(&fp, _font_path, "rb")) != FR_OK) {
+    if (FR_OK != (res = f_open_helper(&fp, _font_path, "rb"))) {
         mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("Open font %s failed."), _font_path);
     }
     f_close(&fp);
@@ -89,8 +91,12 @@ static int imlib_freetype_init(const char *font_path)
     if (error) {
         printf("FTC_Manager_New failed %d\n", error);
 
+        s_ft_cacheManager = NULL;
+
         // Handle error
         FT_Done_FreeType(s_ft_library);
+        s_ft_library = NULL;
+
         return 2;
     }
 
@@ -98,7 +104,11 @@ static int imlib_freetype_init(const char *font_path)
     if (error) {
         printf("FTC_CMapCache_New failed %d\n", error);
         FTC_Manager_Done(s_ft_cacheManager);
+        s_ft_cacheManager = NULL;
+
         FT_Done_FreeType(s_ft_library);
+        s_ft_library = NULL;
+
         return 3;
     }
 
@@ -108,7 +118,11 @@ static int imlib_freetype_init(const char *font_path)
         printf("FTC_ImageCache_New failed %d\n", error);
 
         FTC_Manager_Done(s_ft_cacheManager);
+        s_ft_cacheManager = NULL;
+
         FT_Done_FreeType(s_ft_library);
+        s_ft_library = NULL;
+
         return 4;
     }
 
