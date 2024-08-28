@@ -20,7 +20,7 @@ PLAY_STOP = 1
 PLAY_PAUSE = 2
 
 class Player:
-    def __init__(self):
+    def __init__(self,display_type = None,display_to_ide = True):
         self.mp4_cfg = k_mp4_config_s()
         self.video_info = k_mp4_video_info_s()
         self.video_track = False
@@ -28,6 +28,8 @@ class Player:
         self.audio_track = False
         self.mp4_handle = k_u64_ptr()
         self.play_status = PLAY_STOP
+        self.display_type = display_type
+        self.display_to_ide = display_to_ide
 
     def _init_media_buffer(self):
         if (self.audio_track):
@@ -49,8 +51,14 @@ class Player:
                 self.pyaudio = PyAudio()
                 self.pyaudio.initialize(48000//25)
 
+        if (self.display_type == None):
+            self.display_type = Display.VIRT
 
-        Display.init(Display.LT9611)
+        if (self.display_type == Display.VIRT):
+            Display.init(self.display_type,width = self.video_info.width, height = self.video_info.height)
+        else:
+            Display.init(self.display_type,to_ide = self.display_to_ide)
+
         MediaManager.init()    #vb buffer初始化
 
         if (self.video_track):
@@ -158,6 +166,12 @@ class Player:
                     print("audio not support codecid:",track_info.audio_info.codec_id)
 
         self.debug_codec_info()
+
+        if (self.video_track == True and self.display_type == Display.ST7701):
+            if (self.video_info.width > 800 or self.video_info.height > 480):
+                raise ValueError("Display.ST7701 max support 800x480")
+            else:
+                self.video_info.width = ALIGN_UP(self.video_info.width, 16)
 
     def start(self):
         self._init_media_buffer()
