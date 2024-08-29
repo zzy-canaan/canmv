@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cat <<EOF > ${SDK_BUILD_IMAGES_DIR}/sdcard/config.txt
+auto_resize=1
+EOF
