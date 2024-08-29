@@ -8,7 +8,7 @@ import gc
 
 # init kpu and load kmodel
 kpu = nn.kpu()
-kpu.load_kmodel("/sdcard/examples/nncase_runtime/face_detection/face_detection_320.kmodel")
+kpu.load_kmodel("/sdcard/examples/18-NNCase/face_detection/face_detection_320.kmodel")
 
 # dump model input and output info
 print("inputs info:")
@@ -20,7 +20,7 @@ for i in range(kpu.outputs_size()):
     print(kpu.outputs_desc(i))
 
 # set input tensor
-with open('/sdcard/examples/nncase_runtime/face_detection/face_detection_ai2d_output.bin', 'rb') as f:
+with open('/sdcard/examples/18-NNCase/face_detection/face_detection_ai2d_output.bin', 'rb') as f:
     data = f.read()
 
 input_data = np.frombuffer(data, dtype=np.uint8)

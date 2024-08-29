@@ -10,7 +10,7 @@ import gc
 # init kpu、ai2d and load kmodel
 kpu = nn.kpu()
 ai2d = nn.ai2d()
-kpu.load_kmodel("/sdcard/examples/nncase_runtime/face_detection/face_detection_320.kmodel")
+kpu.load_kmodel("/sdcard/examples/18-NNCase/face_detection/face_detection_320.kmodel")
 
 # init kpu input
 data = np.zeros((1,3,320,320),dtype=np.uint8)
@@ -26,7 +26,7 @@ for i in range(kpu.outputs_size()):
     print(kpu.outputs_desc(i))
 
 # load input bin
-data_file = "/sdcard/examples/nncase_runtime/face_detection/face_detection_ai2d_input.bin"
+data_file = "/sdcard/examples/18-NNCase/face_detection/face_detection_ai2d_input.bin"
 ai2d_input = np.fromfile(data_file, dtype=np.uint8)
 ai2d_input = ai2d_input.reshape((1, 3, 624, 1024))
 ai2d_input_tensor = nn.from_numpy(ai2d_input)

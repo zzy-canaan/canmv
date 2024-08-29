@@ -34,6 +34,48 @@ copy_examples:
 	fi;\
 	rsync -aq --delete --exclude='.git' $(SDK_CANMV_SRC_DIR)/resources/examples/ ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/
 
+.PHONY: copy_kmodels
+copy_kmodels:
+	@echo "Copy kmodels"
+	@if [ ! -d ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils ]; then \
+		mkdir -p ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils; \
+	fi
+	@rsync -aq --delete ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/utils/ ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_detection_320.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/18-NNCase/face_detection/
+	@if [ ! -d ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel ]; then \
+		mkdir -p ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel; \
+	fi
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_recognition.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_detection_320.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/yolov8n_320.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/yolov8n_seg_320.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/LPD_640.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/ocr_det_int16.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/hand_det.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_landmark.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_pose.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_parse.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/LPD_640.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/licence_reco.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/handkp_det.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/ocr_rec_int16.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/hand_reco.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/person_detect_yolov5n.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/yolov8n-pose.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/kws.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_alignment.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_alignment_post.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/eye_gaze.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/yolov5n-falldown.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/cropped_test127.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/nanotrack_backbone_sim.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/nanotracker_head_calib_k230.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/gesture.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/recognition.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/hifigan.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/zh_fastspeech_2.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/zh_fastspeech_1_f32.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+
 .PHONY: copy_micropython
 copy_micropython:
 	@echo "Copy micropython"
@@ -47,7 +89,7 @@ build:
 	@$(MAKE) -j$(NCPUS) -C port || exit $?;
 
 .PHONY: gen_image
-gen_image: build copy_freetype_fonts copy_libs copy_examples copy_micropython
+gen_image: build copy_freetype_fonts copy_libs copy_examples copy_kmodels copy_micropython
 
 all: gen_image
 	@echo "Make canmv done."
