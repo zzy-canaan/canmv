@@ -55,11 +55,11 @@ typedef enum
 #define RT_WLAN_DEV_EVENT_NUM  (2)   /* EVENT GROUP MAX NUM */
 #endif
 
-// basic
+// wlan basic
 #define IOCTRL_WM_GET_AUTO_RECONNECT 0x00
 #define IOCTRL_WM_SET_AUTO_RECONNECT 0x01
 
-// sta
+// wlan sta
 #define IOCTRL_WM_STA_CONNECT 0x10
 #define IOCTRL_WM_STA_DISCONNECT 0x11
 #define IOCTRL_WM_STA_IS_CONNECTED 0x12
@@ -69,7 +69,7 @@ typedef enum
 #define IOCTRL_WM_STA_GET_RSSI 0x16
 #define IOCTRL_WM_STA_SCAN 0x17
 
-// ap
+// wlan ap
 #define IOCTRL_WM_AP_START  0x20
 #define IOCTRL_WM_AP_STOP  0x21
 #define IOCTRL_WM_AP_IS_ACTIVE  0x22
@@ -78,6 +78,13 @@ typedef enum
 #define IOCTRL_WM_AP_DEAUTH_STA  0x25
 #define IOCTRL_WM_AP_GET_COUNTRY  0x26
 #define IOCTRL_WM_AP_SET_COUNTRY  0x27
+
+// lan
+#define IOCTRL_LAN_GET_ISCONNECTED 0x80
+#define IOCTRL_LAN_GET_ISACTIVE   0x81
+#define IOCTRL_LAN_GET_STATUS   0x82
+#define IOCTRL_LAN_GET_MAC   0x83
+#define IOCTRL_LAN_SET_MAC   0x84
 
 // network util
 #define IOCTRL_NET_IFCONFIG 0x100

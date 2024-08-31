@@ -1079,7 +1079,7 @@ static void* ide_dbg_task(void* args) {
             continue;
         } else if (size < 0) {
             // TODO: error, but ???
-            perror("[usb] read ttyUSB1");
+            perror("[usb] read ttyUSB");
         } else if (ide_dbg_attach()) {
             ide_dbg_update(&state, usb_cdc_read_buf, size);
         } else {
@@ -1165,9 +1165,9 @@ void sighandler(int sig) {
 
 void ide_dbg_init(void) {
     pr_info("IDE debugger built %s %s", __DATE__, __TIME__);
-    usb_cdc_fd = open("/dev/ttyUSB1", O_RDWR);
+    usb_cdc_fd = open("/dev/ttyUSB", O_RDWR);
     if (usb_cdc_fd < 0) {
-        perror("open /dev/ttyUSB1 error");
+        perror("open /dev/ttyUSB error");
         return;
     }
     // clear input buffer

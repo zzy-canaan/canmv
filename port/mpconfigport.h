@@ -92,11 +92,18 @@ typedef long long mp_off_t;
 #define MICROPY_PY_THREAD           (1)
 #define MICROPY_SCHEDULER_DEPTH     (8)
 
-#if CONFIG_ENABLE_NETWORK_RT_WLAN
-extern const struct _mp_obj_fun_builtin_var_t network_wlan_make_new_obj;
-#define MICROPY_BOARD_NETWORK_RT_WLAN   { MP_ROM_QSTR(MP_QSTR_WLAN), MP_ROM_PTR(&network_wlan_make_new_obj) },
+#ifdef CONFIG_ENABLE_NETWORK_RT_LAN
+    extern const struct _mp_obj_type_t network_type_eth_lan;
+    #define MICROPY_BOARD_NETWORK_RT_LAN   { MP_ROM_QSTR(MP_QSTR_LAN), MP_ROM_PTR(&network_type_eth_lan) },
 #else
-#define MICROPY_BOARD_NETWORK_RT_WLAN
+    #define MICROPY_BOARD_NETWORK_RT_LAN
+#endif
+
+#ifdef CONFIG_ENABLE_NETWORK_RT_WLAN
+    extern const struct _mp_obj_fun_builtin_var_t network_wlan_make_new_obj;
+    #define MICROPY_BOARD_NETWORK_RT_WLAN   { MP_ROM_QSTR(MP_QSTR_WLAN), MP_ROM_PTR(&network_wlan_make_new_obj) },
+#else
+    #define MICROPY_BOARD_NETWORK_RT_WLAN
 #endif
 
 #define MICROPY_PY_SOCKET           (1)
@@ -104,6 +111,7 @@ extern const struct _mp_obj_fun_builtin_var_t network_wlan_make_new_obj;
 #define MICROPY_PY_NETWORK_HOSTNAME_DEFAULT "canmv k230"
 #define MICROPY_PY_SOCKET_EXTENDED_STATE  (1)
 #define MICROPY_PORT_NETWORK_INTERFACES \
+    MICROPY_BOARD_NETWORK_RT_LAN \
     MICROPY_BOARD_NETWORK_RT_WLAN
 
 // #define MICROPY_PY_NETWORK_INCLUDEFILE "network/network_hdr.h"
