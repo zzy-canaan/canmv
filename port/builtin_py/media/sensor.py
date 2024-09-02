@@ -153,6 +153,8 @@ class Sensor:
             dft_sensor_id = CAM_DEV_ID_2
         elif brd == "k230_canmv_v3p0":
             dft_sensor_id = CAM_DEV_ID_2
+        elif brd == "k230_canmv_lckfb":
+            dft_sensor_id = CAM_DEV_ID_2
 
         self._dev_id = kwargs.get('id', dft_sensor_id)
         if (self._dev_id > CAM_DEV_ID_MAX - 1):
