@@ -114,15 +114,25 @@ STATIC mp_obj_t network_rt_net_ifconfig(size_t n_args, const mp_obj_t *args) {
 
         return mp_obj_new_tuple(4, tuple);
     } else {
-        // set ifconfig info
-        ifconfig.set = 1;
+        if (mp_obj_is_str(args[1])) {
+            switch (mp_obj_str_get_qstr(args[1])) {
+                case MP_QSTR_dhcp: {
+                    ifconfig.set = 2; // enable dhcp
+                } break;
+                default: {
+                    mp_raise_ValueError(MP_ERROR_TEXT("unknown config param"));
+                } break;
+            }
+        } else {
+            ifconfig.set = 1;   // disable dhcp, set static ip
 
-        mp_obj_t *items;
-        mp_obj_get_array_fixed_n(args[1], 4, &items);
-        netutils_parse_ipv4_addr(items[0], (uint8_t *)&ifconfig.ip.addr, NETUTILS_BIG);
-        netutils_parse_ipv4_addr(items[1], (uint8_t *)&ifconfig.netmask.addr, NETUTILS_BIG);
-        netutils_parse_ipv4_addr(items[2], (uint8_t *)&ifconfig.gw.addr, NETUTILS_BIG);
-        netutils_parse_ipv4_addr(items[3], (uint8_t *)&ifconfig.dns.addr, NETUTILS_BIG);
+            mp_obj_t *items;
+            mp_obj_get_array_fixed_n(args[1], 4, &items);
+            netutils_parse_ipv4_addr(items[0], (uint8_t *)&ifconfig.ip.addr, NETUTILS_BIG);
+            netutils_parse_ipv4_addr(items[1], (uint8_t *)&ifconfig.netmask.addr, NETUTILS_BIG);
+            netutils_parse_ipv4_addr(items[2], (uint8_t *)&ifconfig.gw.addr, NETUTILS_BIG);
+            netutils_parse_ipv4_addr(items[3], (uint8_t *)&ifconfig.dns.addr, NETUTILS_BIG);
+        }
 
         if(0x00 != ioctl(s_net_mgmt_dev_fd, IOCTRL_NET_IFCONFIG, &ifconfig)) {
             mp_printf(&mp_plat_print, "run ifconfig failed.\n");
