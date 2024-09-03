@@ -756,7 +756,7 @@ MP_NOINLINE int main_(int argc, char **argv) {
         // pass
         ;
 
-        if(is_repl_intr) {
+        if((is_repl_intr) || ide_dbg_attach()) {
             goto main_thread_exit;
         }
     }
