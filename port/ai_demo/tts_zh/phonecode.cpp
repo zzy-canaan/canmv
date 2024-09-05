@@ -63,7 +63,10 @@ std::string phone2str_zh_(std::string phone_string, bool mobile = true) {
             
         }
         return result;
-    } 
+    } else {
+        string result;
+        return result;
+    }
    
 }
 

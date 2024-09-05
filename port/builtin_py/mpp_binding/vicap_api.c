@@ -60,12 +60,18 @@ STATIC mp_obj_t _kd_mpi_vicap_set_mclk(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(kd_mpi_vicap_set_mclk_obj, 4, 4, _kd_mpi_vicap_set_mclk);
 
+STATIC mp_obj_t get_board_default_sensor_csi_num(void) {
+    return mp_obj_new_int(CONFIG_MPP_SENSOR_DEFAULT_CSI);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_board_default_sensor_csi_num_obj, get_board_default_sensor_csi_num);
+
 #define FUNC_IMPL
 #define FUNC_FILE "vicap_func_def.h"
 #include "func_def.h"
 
 STATIC const mp_rom_map_elem_t vicap_api_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_vicap_api) },
+    { MP_ROM_QSTR(MP_QSTR_get_default_sensor), MP_ROM_PTR(&get_board_default_sensor_csi_num_obj) },
     DEF_FUNC_ADD(kd_mpi_vicap_dump_frame)
     DEF_FUNC_ADD(kd_mpi_vicap_set_mclk)
 #define FUNC_ADD

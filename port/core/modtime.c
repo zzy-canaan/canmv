@@ -32,9 +32,14 @@
 #include <sys/time.h>
 #include <math.h>
 
+#include "obj.h"
 #include "py/mphal.h"
 #include "py/runtime.h"
 #include "py_clock.h"
+
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 STATIC mp_obj_t mp_time_time_get(void) {
     return mp_obj_new_int((mp_int_t)time(NULL));
@@ -47,7 +52,17 @@ uint64_t mp_hal_time_ns(void) {
 }
 
 mp_uint_t mp_hal_ticks_cpu(void) {
-    return 0;
+#define MISC_DEV_CMD_GET_CPU_TICK       (0x1024 + 5)
+
+    uint64_t tick = 0;
+
+    int fd = open("/dev/canmv_misc", O_RDONLY);
+    if(0 < fd) {
+        ioctl(fd, MISC_DEV_CMD_GET_CPU_TICK, &tick);
+        close(fd);
+    }
+
+    return tick;
 }
 
 mp_uint_t mp_hal_ticks_ms(void) {
@@ -89,7 +104,14 @@ void mp_hal_delay_ms(mp_uint_t ms) {
 STATIC mp_obj_t mod_time_gm_local_time(size_t n_args, const mp_obj_t *args, struct tm *(*time_func)(const time_t *timep)) {
     time_t t;
     if (n_args == 0) {
-        t = time(NULL);
+#define MISC_DEV_CMD_GET_TIME_T  (0x1024 + 4)
+        int fd = open("/dev/canmv_misc", O_RDONLY);
+        if(0 < fd) {
+            ioctl(fd, MISC_DEV_CMD_GET_TIME_T, &t);
+            close(fd);
+        } else {
+            t = time(NULL);
+        }
     } else {
         #if MICROPY_PY_BUILTINS_FLOAT && MICROPY_FLOAT_IMPL == MICROPY_FLOAT_IMPL_DOUBLE
         mp_float_t val = mp_obj_get_float(args[0]);
@@ -167,8 +189,24 @@ STATIC mp_obj_t mod_time_clock(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_time_clock_obj, mod_time_clock);
 
+STATIC mp_obj_t mod_time_ntp_sync(void) {
+#define MISC_DEV_CMD_NTP_SYNC  (0x1024 + 3)
+
+    int fd = -1, result = 0;
+
+    fd = open("/dev/canmv_misc", O_RDONLY);
+    if(0 < fd) {
+        ioctl(fd, MISC_DEV_CMD_NTP_SYNC, &result);
+        close(fd);
+    }
+
+    return mp_obj_new_bool(0x00 < result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_time_ntp_sync_obj, mod_time_ntp_sync);
+
 #define MICROPY_PY_TIME_EXTRA_GLOBALS \
     { MP_ROM_QSTR(MP_QSTR_clock), MP_ROM_PTR(&py_clock_type) }, \
     { MP_ROM_QSTR(MP_QSTR_gmtime), MP_ROM_PTR(&mod_time_gmtime_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_localtime), MP_ROM_PTR(&mod_time_localtime_obj) }, \
-    { MP_ROM_QSTR(MP_QSTR_mktime), MP_ROM_PTR(&mod_time_mktime_obj) },
+    { MP_ROM_QSTR(MP_QSTR_mktime), MP_ROM_PTR(&mod_time_mktime_obj) }, \
+    { MP_ROM_QSTR(MP_QSTR_ntp_sync), MP_ROM_PTR(&mod_time_ntp_sync_obj) },

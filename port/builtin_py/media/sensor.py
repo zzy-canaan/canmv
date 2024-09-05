@@ -141,20 +141,7 @@ class Sensor:
         self._dft_output_buff_num = 6
 
         def_mirror = 0
-        dft_sensor_id = CAM_DEV_ID_0
-
-        brd = os.uname()[-1]
-        if brd == "k230d_canmv":
-            dft_sensor_id = CAM_DEV_ID_2
-            self._dft_output_buff_num = 4
-        elif brd == "k230_canmv_01studio":
-            dft_sensor_id = CAM_DEV_ID_2
-        elif brd == "k230d_canmv_bpi_zero":
-            dft_sensor_id = CAM_DEV_ID_2
-        elif brd == "k230_canmv_v3p0":
-            dft_sensor_id = CAM_DEV_ID_2
-        elif brd == "k230_canmv_lckfb":
-            dft_sensor_id = CAM_DEV_ID_2
+        dft_sensor_id = get_default_sensor()
 
         self._dev_id = kwargs.get('id', dft_sensor_id)
         if (self._dev_id > CAM_DEV_ID_MAX - 1):
