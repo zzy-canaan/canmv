@@ -769,8 +769,8 @@ STATIC mp_obj_t py_rt_eth_lan_type_make_new(const mp_obj_type_t *type, size_t n_
     mp_obj_t rt_net_obj;
 
     if(0 > s_net_mgmt_dev_fd) {
-        if(0 > (s_net_mgmt_dev_fd = open("/dev/net_mgmt", O_RDWR))) {
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open /dev/net_mgmt"));
+        if(0 > (s_net_mgmt_dev_fd = open("/dev/canmv_net_mgmt", O_RDWR))) {
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open /dev/canmv_net_mgmt"));
         }
     }
 
@@ -1525,8 +1525,8 @@ STATIC mp_obj_t network_wlan_make_new(size_t n_args, const mp_obj_t *args)
     int itf = MOD_NETWORK_STA_IF;
 
     if(0 > s_net_mgmt_dev_fd) {
-        if(0 > (s_net_mgmt_dev_fd = open("/dev/net_mgmt", O_RDWR))) {
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open /dev/net_mgmt"));
+        if(0 > (s_net_mgmt_dev_fd = open("/dev/canmv_net_mgmt", O_RDWR))) {
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open /dev/canmv_net_mgmt"));
         }
     }
 

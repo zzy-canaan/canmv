@@ -29,8 +29,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "obj.h"
 #include "py/runtime.h"
 #include "py/mphal.h"
+
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 STATIC mp_obj_t mp_os_getenv(size_t n_args, const mp_obj_t *args) {
     const char *s = getenv(mp_obj_str_get_str(args[0]));
@@ -127,3 +132,18 @@ STATIC mp_obj_t mp_os_exitpoint(size_t n_args, const mp_obj_t *args) {
     return mp_obj_new_int(old);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_os_exitpoint_obj, 0, 1, mp_os_exitpoint);
+
+STATIC mp_obj_t mp_os_get_cpu_usage(size_t n_args, const mp_obj_t *args) {
+#define MISC_DEV_CMD_CPU_USAGE (0x1024 + 2)
+
+    int fd = -1, usage = -1;
+
+    fd = open("/dev/canmv_misc", O_RDONLY);
+    if(0 < fd) {
+        ioctl(fd, MISC_DEV_CMD_CPU_USAGE, &usage);
+        close(fd);
+    }
+
+    return MP_OBJ_NEW_SMALL_INT(usage);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_os_get_cpu_usage_obj, 0, 1, mp_os_get_cpu_usage);
