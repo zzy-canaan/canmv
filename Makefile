@@ -37,12 +37,6 @@ copy_examples:
 .PHONY: copy_kmodels
 copy_kmodels:
 	@echo "Copy kmodels"
-	@if [ ! -d ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils ]; then \
-		mkdir -p ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils; \
-	fi
-	@rsync -aq --delete ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/utils/ ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils/
-	@rm -rf ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils/llama.bin
-	@rm -rf ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/utils/libsentencepiece.a
 	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/face_detection_320.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/18-NNCase/face_detection/
 	@if [ ! -d ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel ]; then \
 		mkdir -p ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel; \
