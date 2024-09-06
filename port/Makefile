@@ -120,11 +120,15 @@ MPP_SRC_C = $(wildcard builtin_py/mpp_binding/*.c)
 KPU_SRC_C = $(wildcard kpu/*.c)
 AICUBE_SRC_C = $(wildcard ai_cube/*.c)
 AIDEMO_SRC_C = $(wildcard ai_demo/*.c)
-NETWORK_SRC_C = $(wildcard network/*.c)
 MODULES_SRC_C = $(wildcard modules/*.c)
 MODULES_SRC_C += $(wildcard modules/*/*.c)
 OMV_SRC_C = $(wildcard omv/*.c)
 OMV_SRC_C += $(wildcard omv/*/*.c)
+
+NETWORK_SRC_C :=
+ifneq ($(filter y,$(CONFIG_ENABLE_NETWORK_RT_WLAN) $(CONFIG_ENABLE_NETWORK_RT_LAN)),)
+    NETWORK_SRC_C += $(wildcard network/*.c)
+endif
 
 # LVGL build rules
 LVGL_BINDING_DIR = 3rd-party/lv_bindings
