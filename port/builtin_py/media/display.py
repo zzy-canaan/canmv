@@ -57,10 +57,19 @@ class Display:
         def __del__(self):
             self.linker.__del__()
 
-    LT9611 = const(300)
-    HX8377 = const(301)
-    ST7701 = const(302)
-    VIRT = const(303)
+    VIRT = const(300)
+    LT9611 = const(301)
+    HX8377 = const(302)
+
+    # ST7701s
+    ST7701 = const(400)
+    ST7701_800x480_LZX35IPSA00 = const(400)
+
+    ST7701_800x480_D310FPC9362 = const(401)
+
+    # ILI9806
+    ILI9806 = const(500)
+    ILI9806_480x800 = const(500)
 
     # define VO channel
     LAYER_VIDEO1 = K_VO_DISPLAY_CHN_ID1
@@ -189,7 +198,7 @@ class Display:
 
         cls._ide_vo_wbc_flag = 0
 
-        if _type >= Display.LT9611:
+        if _type >= Display.VIRT:
             if _type == Display.LT9611:
                 _width = width if width is not None else 1920
                 _height = height if height is not None else 1080
@@ -230,6 +239,8 @@ class Display:
                 _width = None
                 _height = None
                 _flag = None
+            elif _type == Display.ILI9806:
+                cls._connector_type = ILI9806_MIPI_2LAN_480X800_30FPS
             elif _type == Display.VIRT:
                 cls._write_back_to_ide = True
                 cls._connector_type = VIRTUAL_DISPLAY_DEVICE
