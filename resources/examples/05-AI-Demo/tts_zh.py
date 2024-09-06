@@ -119,8 +119,7 @@ class HifiGanApp(AIBase):
     def postprocess(self, results):
         with ScopedTiming("hifigan postprocess", self.debug_mode > 0):
             # 汇总输出数据
-            for j in range(25600):
-                self.mel_data.append(results[0][0][0][j])
+            self.mel_data+=results[0][0][0].tolist()
 
 #自定义中文TTS任务类
 class TTSZH:
