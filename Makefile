@@ -86,8 +86,6 @@ build:
 
 .PHONY: gen_image
 gen_image: build copy_freetype_fonts copy_libs copy_examples copy_kmodels copy_micropython
-	@echo "Creating config.txt in ${SDK_BUILD_IMAGES_DIR}/sdcard"
-	@$(SDK_CANMV_SRC_DIR)/gen_config
 
 all: gen_image
 	@echo "Make canmv done."
