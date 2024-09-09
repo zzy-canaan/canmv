@@ -167,12 +167,12 @@ class Display:
         if cls._is_inited:
             if (Display.LAYER_VIDEO1 <= layer <= Display.LAYER_VIDEO2):
                 cls.__config_video_layer(layer_config)
-            elif (Display.LAYER_OSD0 <= i <= Display.LAYER_OSD3):
-                cls.__config_osd_layer(layer_config)
+            elif (Display.LAYER_OSD0 <= layer <= Display.LAYER_OSD3):
+                cls._layer_configured[layer] = cls.__config_osd_layer(layer_config)
 
     @classmethod
     def unbind_layer(cls, layer):
-        if isinstance(cls._layer_bind_cfg[chn], Display.BindConfig):
+        if isinstance(cls._layer_bind_cfg[layer], Display.BindConfig):
             cls._layer_bind_cfg[layer].__del__()
             cls._layer_bind_cfg[layer] = None
         else:
@@ -320,7 +320,7 @@ class Display:
                 if (Display.LAYER_VIDEO1 <= i <= Display.LAYER_VIDEO2):
                     cls.__config_video_layer(cls._layer_bind_cfg[i].layer_config)
                 elif (Display.LAYER_OSD0 <= i <= Display.LAYER_OSD3):
-                    cls.__config_osd_layer(cls._layer_bind_cfg[i].layer_config)
+                    cls._layer_configured[i] = cls.__config_osd_layer(cls._layer_bind_cfg[i].layer_config)
 
         cls._is_inited = True
 
@@ -382,8 +382,8 @@ class Display:
             if layer > K_VO_MAX_CHN_NUMS:
                 raise IndexError(f"layer({layer}) out of range")
 
-            if isinstance(cls._layer_cfgs[i], Display.LayerConfig):
-                return cls._layer_cfgs[i].rect[1]
+            if isinstance(cls._layer_cfgs[layer], Display.LayerConfig):
+                return cls._layer_cfgs[layer].rect[1]
             else:
                 print(f"layer({layer}) is not configured")
                 return 0
@@ -397,8 +397,8 @@ class Display:
             if layer > K_VO_MAX_CHN_NUMS:
                 raise IndexError(f"layer({layer}) out of range")
 
-            if isinstance(cls._layer_cfgs[i], Display.LayerConfig):
-                return cls._layer_cfgs[i].rect[3]
+            if isinstance(cls._layer_cfgs[layer], Display.LayerConfig):
+                return cls._layer_cfgs[layer].rect[3]
             else:
                 print(f"layer({layer}) is not configured")
                 return 0
@@ -432,7 +432,7 @@ class Display:
             return
 
         if not (Display.LAYER_VIDEO1 <= layer_config.layer <= Display.LAYER_VIDEO2):
-            raise IndexError(f"layer({layer}) out of range")
+            raise IndexError(f"layer({layer_config.layer}) out of range")
 
         if layer_config.pix_format != PIXEL_FORMAT_YUV_SEMIPLANAR_420:
             raise AssertionError("bind video layer only support format PIXEL_FORMAT_YUV_SEMIPLANAR_420")
@@ -490,13 +490,13 @@ class Display:
         cls._layer_configured[layer_config.layer] = True
 
     @classmethod
-    def __config_osd_layer(cls, layer_config):
+    def __config_osd_layer(cls, layer_config) -> bool:
         if not isinstance(layer_config, Display.LayerConfig):
             raise TypeError("layer_config is not Display.LayerConfig")
 
         if cls._layer_cfgs[layer_config.layer] == layer_config:
             # print(f"layer({layer_config.layer}) config not changed.")
-            return
+            return True
 
         cls._disable_layer(layer_config.layer)
 
@@ -541,6 +541,7 @@ class Display:
 
         cls._layer_cfgs[layer_config.layer] = layer_config
         # cls._layer_configured[layer_config.layer] = True
+        return True
 
     @classmethod
     def _config_layer(cls, layer, rect, pix_format, flag, alpha = 255):
