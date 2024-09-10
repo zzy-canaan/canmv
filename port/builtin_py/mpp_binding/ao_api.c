@@ -40,11 +40,12 @@
 #define FUNC_FILE "ao_func_def.h"
 #include "func_def.h"
 
-STATIC mp_obj_t ao_set_vol(mp_obj_t vol_obj) {
+STATIC mp_obj_t ao_set_vol(mp_obj_t vol_obj, mp_obj_t chn_obj) {
     int fd = -1;
     bool succ = true;
     float vol_value = 7.0f - 50.0f;
     mp_int_t vol = mp_obj_get_int(vol_obj);
+    mp_int_t chn = mp_obj_get_int(chn_obj);
 
     if(0 > (fd = open("/dev/acodec_device", O_RDWR))) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open acodec_device device"));
@@ -59,43 +60,78 @@ STATIC mp_obj_t ao_set_vol(mp_obj_t vol_obj) {
         vol_value = -120.0f;
     }
 
-    if(0x00 != ioctl(fd, 18, &vol_value)) {
-        succ = false; 
-        mp_printf(&mp_plat_print, "set hp[l] vol failed\n");
+    // LEFT
+    if(0x01 == (chn & 0x01)) {
+        if(0x00 != ioctl(fd, 18, &vol_value)) {
+            succ = false;
+            mp_printf(&mp_plat_print, "set hp[l] vol failed\n");
+        }
     }
-    if(0x00 != ioctl(fd, 19, &vol_value)) {
-        succ = false; 
-        mp_printf(&mp_plat_print, "set hp[r] vol failed\n");
+
+    // RIGHT
+    if(0x02 == (chn & 0x02)) {
+        if(0x00 != ioctl(fd, 19, &vol_value)) {
+            succ = false;
+            mp_printf(&mp_plat_print, "set hp[r] vol failed\n");
+        }
     }
 
     close(fd);
 
     return mp_obj_new_bool(succ);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(ao_set_vol_obj, ao_set_vol);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(ao_set_vol_obj, ao_set_vol);
 
 STATIC mp_obj_t ao_get_vol(void) {
     int fd = -1;
-    float vol_value, volume_zero_value = 7.0f - 50.0f;
+    float vol_value;
+    const float volume_zero_value = 7.0f - 50.0f;
     int vol;
 
     if(0 > (fd = open("/dev/acodec_device", O_RDWR))) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open acodec_device device"));
     }
-    if(0x00 != ioctl(fd, 32, &vol_value)) {
-        mp_printf(&mp_plat_print, "get mic[l] vol failed\n");
+
+    mp_obj_t tuple_o = mp_obj_new_tuple(2, MP_OBJ_NULL);
+    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(tuple_o);
+
+    // get left channel
+    {
+        if(0x00 != ioctl(fd, 32, &vol_value)) {
+            mp_printf(&mp_plat_print, "get vol failed\n");
+        }
+
+        if((volume_zero_value) > vol_value) {
+            vol = 0;
+        } else if(7.0f < vol_value) {
+            vol = 100;
+        } else {
+            vol = (int)((vol_value - volume_zero_value) / 0.5f);
+        }
+
+        tuple->items[0] = mp_obj_new_int(vol);
     }
+
+    // get right channel
+    {
+        if(0x00 != ioctl(fd, 33, &vol_value)) {
+            mp_printf(&mp_plat_print, "get vol failed\n");
+        }
+
+        if((volume_zero_value) > vol_value) {
+            vol = 0;
+        } else if(7.0f < vol_value) {
+            vol = 100;
+        } else {
+            vol = (int)((vol_value - volume_zero_value) / 0.5f);
+        }
+
+        tuple->items[1] = mp_obj_new_int(vol);
+    }
+
     close(fd);
 
-    if((volume_zero_value) > vol_value) {
-        vol = 0;
-    } else if(7.0f < vol_value) {
-        vol = 100;
-    } else {
-        vol = (int)((vol_value - volume_zero_value) / 0.5f);
-    }
-
-    return MP_OBJ_NEW_SMALL_INT(vol);
+    return tuple_o;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(ao_get_vol_obj, ao_get_vol);
 
@@ -103,6 +139,7 @@ STATIC const mp_rom_map_elem_t ao_api_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_ao_api) },
     { MP_ROM_QSTR(MP_QSTR_ao_set_vol),  MP_ROM_PTR(&ao_set_vol_obj) },
     { MP_ROM_QSTR(MP_QSTR_ao_get_vol),  MP_ROM_PTR(&ao_get_vol_obj) },
+
 #define FUNC_ADD
 #define FUNC_FILE "ao_func_def.h"
 #include "func_def.h"

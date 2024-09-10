@@ -39,11 +39,12 @@
 #define FUNC_FILE "ai_func_def.h"
 #include "func_def.h"
 
-STATIC mp_obj_t ai_set_vol(mp_obj_t vol_obj) {
+STATIC mp_obj_t ai_set_vol(mp_obj_t chn_obj, mp_obj_t vol_obj) {
     int fd = -1;
     bool succ = true;
     float vol_value = 30.0f - 50.0f;
     mp_int_t vol = mp_obj_get_int(vol_obj);
+    mp_int_t chn = mp_obj_get_int(chn_obj);
 
     if(0 > (fd = open("/dev/acodec_device", O_RDWR))) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open acodec_device device"));
@@ -59,43 +60,78 @@ STATIC mp_obj_t ai_set_vol(mp_obj_t vol_obj) {
         vol_value = -97.0f;
     }
 
-    if(0x00 != ioctl(fd, 12, &vol_value)) {
-        succ = false; 
-        mp_printf(&mp_plat_print, "set mic[l] vol failed\n");
+    // LEFT
+    if(0x01 == (chn & 0x01)) {
+        if(0x00 != ioctl(fd, 12, &vol_value)) {
+            succ = false;
+            mp_printf(&mp_plat_print, "set mic[l] vol failed\n");
+        }
     }
-    if(0x00 != ioctl(fd, 13, &vol_value)) {
-        succ = false; 
-        mp_printf(&mp_plat_print, "set mic[r] vol failed\n");
+
+    // RIGHT
+    if(0x02 == (chn & 0x02)) {
+        if(0x00 != ioctl(fd, 13, &vol_value)) {
+            succ = false;
+            mp_printf(&mp_plat_print, "set mic[r] vol failed\n");
+        }
     }
 
     close(fd);
 
     return mp_obj_new_bool(succ);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(ai_set_vol_obj, ai_set_vol);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(ai_set_vol_obj, ai_set_vol);
 
 STATIC mp_obj_t ai_get_vol(void) {
     int fd = -1;
-    float vol_value, volume_zero_value = 30.0f - 50.0f;
-    int vol;
+    float vol_value;
+    int vol = 0;
+    const float volume_zero_value = 30.0f - 50.0f;
 
     if(0 > (fd = open("/dev/acodec_device", O_RDWR))) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("could not open acodec_device device"));
     }
-    if(0x00 != ioctl(fd, 26, &vol_value)) {
-        mp_printf(&mp_plat_print, "get mic[l] vol failed\n");
+
+    mp_obj_t tuple_o = mp_obj_new_tuple(2, MP_OBJ_NULL);
+    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(tuple_o);
+
+    // get left channel
+    {
+        if(0x00 != ioctl(fd, 26, &vol_value)) {
+            mp_printf(&mp_plat_print, "get mic[l] left vol failed\n");
+        }
+
+        if((volume_zero_value) > vol_value) {
+            vol = 0;
+        } else if(30.0f < vol_value) {
+            vol = 100;
+        } else {
+            vol = (int)((vol_value - volume_zero_value) / 0.5f);
+        }
+
+        tuple->items[0] = mp_obj_new_int(vol);
     }
+
+    // get right channel
+    {
+        if(0x00 != ioctl(fd, 27, &vol_value)) {
+            mp_printf(&mp_plat_print, "get mic[r] vol failed\n");
+        }
+
+        if((volume_zero_value) > vol_value) {
+            vol = 0;
+        } else if(30.0f < vol_value) {
+            vol = 100;
+        } else {
+            vol = (int)((vol_value - volume_zero_value) / 0.5f);
+        }
+
+        tuple->items[1] = mp_obj_new_int(vol);
+    }
+
     close(fd);
 
-    if((volume_zero_value) > vol_value) {
-        vol = 0;
-    } else if(30.0f < vol_value) {
-        vol = 100;
-    } else {
-        vol = (int)((vol_value - volume_zero_value) / 0.5f);
-    }
-
-    return MP_OBJ_NEW_SMALL_INT(vol);
+    return tuple_o;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(ai_get_vol_obj, ai_get_vol);
 

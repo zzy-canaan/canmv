@@ -9,6 +9,11 @@ DIV_NUM        = 5
 paInt16        = 0        #: 16 bit int
 paInt24        = 1        #: 24 bit int
 paInt32        = 2        #: 32 bit int
+
+LEFT        = const(1)
+RIGHT       = const(2)
+LEFT_RIGHT  = const(3)
+
 USE_EXTERN_BUFFER_CONFIG = True
 
 def _vb_pool_init(frames_per_buffer=1024):
@@ -107,7 +112,7 @@ class Stream:
     def close(self):
         pass
 
-    def volume(self, vol = None):
+    def volume(self, channel = LEFT_RIGHT,vol = None):
         pass
 
 class Write_stream(Stream):
@@ -142,7 +147,6 @@ class Write_stream(Stream):
         PA_manager.initialize(frames_per_buffer)
         if (self._is_running):
             self.start_stream()
-        self.volume(60)
 
     def _init_audio_frame(self):
         if (self._audio_handle == -1):
@@ -218,11 +222,11 @@ class Write_stream(Stream):
         self._is_running = False
         self._parent._remove_stream(self)
 
-    def volume(self, vol = None):
+    def volume(self, vol = None, channel = LEFT_RIGHT):
         if vol is None:
             return ao_get_vol()
         else:
-            ao_set_vol(vol)
+            return ao_set_vol(vol, channel)
 
 class Read_stream(Stream):
     dev_chn_enable = {0:False,1:False}
@@ -255,7 +259,6 @@ class Read_stream(Stream):
         PA_manager.initialize(frames_per_buffer)
         if (self._is_running):
             self.start_stream()
-        self.volume(100)
 
     def start_stream(self):
         if (not self._start_stream):
@@ -317,11 +320,11 @@ class Read_stream(Stream):
         self._is_running = False
         self._parent._remove_stream(self)
 
-    def volume(self, vol = None):
+    def volume(self,vol = None, channel = LEFT_RIGHT):
         if vol is None:
             return ai_get_vol()
         else:
-            ai_set_vol(vol)
+            return ai_set_vol(vol, channel)
 
 class PyAudio:
     #vb init flag

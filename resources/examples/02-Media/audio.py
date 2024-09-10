@@ -35,7 +35,9 @@ def record_audio(filename, duration):
                         input=True,
                         frames_per_buffer=CHUNK)
 
-        stream.volume(100)  # 设置音量为最大，可能会导致噪声增大
+        stream.volume(LEFT,70)
+        stream.volume(RIGHT,85)
+        print("volume :",stream.volume())
 
         frames = []
         #采集音频数据并存入列表
@@ -74,7 +76,8 @@ def play_audio(filename):
                     rate=wf.get_framerate(),
                     output=True,frames_per_buffer=CHUNK)
 
-        stream.volume(100)  # 设置音量为最大，可能会导致噪声增大
+        #设置音频输出流的音量
+        stream.volume(vol=85)
 
         data = wf.read_frames(CHUNK)#从wav文件中读取数一帧数据
 
@@ -112,16 +115,19 @@ def loop_audio(duration):
                         input=True,
                         frames_per_buffer=CHUNK)
 
-        input_stream.volume(100)    # 设置音量为最大，可能会导致噪声增大
-        print(f"MIC volume {input_stream.volume()}")
+        #设置音频输入流的音量
+        input_stream.volume(LEFT,70)
+        input_stream.volume(RIGHT,85)
+        print("input volume :",input_stream.volume())
 
         #创建音频输出流
         output_stream = p.open(format=FORMAT,
                         channels=CHANNELS,
                         rate=RATE,
                         output=True,frames_per_buffer=CHUNK)
-        output_stream.volume(100)
-        print(f"HP volume {input_stream.volume()}")
+
+        #设置音频输出流的音量
+        output_stream.volume(vol=85)
 
         #从音频输入流中获取数据写入到音频输出流中
         for i in range(0, int(RATE / CHUNK * duration)):
@@ -142,7 +148,7 @@ def loop_audio(duration):
 if __name__ == "__main__":
     os.exitpoint(os.EXITPOINT_ENABLE)
     print("audio sample start")
-    #play_audio('/sdcard/app/input.wav') #播放wav文件
-    #record_audio('/sdcard/app/output.wav', 15)  #录制wav文件
-    loop_audio(15) #采集音频并输出
+    record_audio('/sdcard/examples/test.wav', 15)  #录制wav文件
+    # play_audio('/sdcard/examples/test.wav') #播放wav文件
+    # loop_audio(15) #采集音频并输出
     print("audio sample done")
