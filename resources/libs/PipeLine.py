@@ -51,7 +51,7 @@ class PipeLine:
             nn.shrink_memory_pool()
             # 初始化并配置sensor
             brd=os.uname()[-1]
-            if brd=="k230d_canmv":
+            if brd=="k230d_canmv_bpi_zero":
                 self.sensor = Sensor(fps=fps) if sensor is None else sensor
             elif brd=="k230_canmv_lckfb":
                 self.sensor = Sensor(fps=fps) if sensor is None else sensor
