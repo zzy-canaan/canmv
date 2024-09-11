@@ -219,7 +219,7 @@ class OCRDetRec:
 
 
 if __name__=="__main__":
-    # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
+    # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"，k230d受限内存不支持
     display_mode="hdmi"
     if display_mode=="hdmi":
         display_size=[1920,1080]

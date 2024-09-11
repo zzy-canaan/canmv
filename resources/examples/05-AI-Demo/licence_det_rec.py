@@ -150,6 +150,8 @@ class LicenceRec:
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    rgb888p_size = [640,360]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -159,7 +161,6 @@ if __name__=="__main__":
     # 车牌识别模型路径
     licence_rec_kmodel_path="/sdcard/examples/kmodel/licence_reco.kmodel"
     # 其它参数
-    rgb888p_size=[640,360]
     licence_det_input_size=[640,640]
     licence_rec_input_size=[220,32]
     confidence_threshold=0.2

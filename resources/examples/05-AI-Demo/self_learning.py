@@ -148,6 +148,9 @@ class SelfLearningApp(AIBase):
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    # k230保持不变，k230d可调整为[1280,720]
+    rgb888p_size=[1920,1080]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -156,7 +159,6 @@ if __name__=="__main__":
     kmodel_path="/sdcard/examples/kmodel/recognition.kmodel"
     database_path="/sdcard/examples/utils/features/"
     # 其它参数设置
-    rgb888p_size=[1920,1080]
     model_input_size=[224,224]
     labels=["苹果","香蕉"]
     top_k=3

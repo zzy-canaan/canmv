@@ -358,6 +358,8 @@ class NanoTracker:
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    rgb888p_size=[1280,720]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -369,7 +371,6 @@ if __name__=="__main__":
     # 跟踪模型路径
     tracker_kmodel_path="/sdcard/examples/kmodel/nanotracker_head_calib_k230.kmodel"
     # 其他参数
-    rgb888p_size=[1280,720]
     track_crop_input_size=[127,127]
     track_src_input_size=[255,255]
     threshold=0.1

@@ -156,6 +156,8 @@ class ObjectDetectionApp(AIBase):
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    rgb888p_size=[320,320]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -167,7 +169,6 @@ if __name__=="__main__":
     confidence_threshold = 0.2
     nms_threshold = 0.2
     max_boxes_num = 50
-    rgb888p_size=[320,320]
 
     # 初始化PipeLine
     pl=PipeLine(rgb888p_size=rgb888p_size,display_size=display_size,display_mode=display_mode)

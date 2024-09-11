@@ -110,6 +110,9 @@ class HandDetectionApp(AIBase):
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    # k230保持不变，k230d可调整为[640,360]
+    rgb888p_size = [1920, 1080]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -119,7 +122,6 @@ if __name__=="__main__":
     # 其它参数设置
     confidence_threshold = 0.2
     nms_threshold = 0.5
-    rgb888p_size=[1920,1080]
     labels = ["hand"]
     anchors = [26,27, 53,52, 75,71, 80,99, 106,82, 99,134, 140,113, 161,172, 245,276]   #anchor设置
 
