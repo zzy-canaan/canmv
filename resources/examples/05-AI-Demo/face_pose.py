@@ -273,6 +273,9 @@ class FacePose:
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    # k230保持不变，k230d可调整为[640,360]
+    rgb888p_size = [1920, 1080]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -283,7 +286,6 @@ if __name__=="__main__":
     face_pose_kmodel_path="/sdcard/examples/kmodel/face_pose.kmodel"
     # 其它参数
     anchors_path="/sdcard/examples/utils/prior_data_320.bin"
-    rgb888p_size=[1920,1080]
     face_det_input_size=[320,320]
     face_pose_input_size=[120,120]
     confidence_threshold=0.5

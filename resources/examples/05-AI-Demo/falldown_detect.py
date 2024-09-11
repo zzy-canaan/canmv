@@ -96,6 +96,9 @@ class FallDetectionApp(AIBase):
 if __name__ == "__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    # k230保持不变，k230d可调整为[640,360]
+    rgb888p_size = [1920, 1080]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -104,7 +107,6 @@ if __name__ == "__main__":
     kmodel_path = "/sdcard/examples/kmodel/yolov5n-falldown.kmodel"
     confidence_threshold = 0.3
     nms_threshold = 0.45
-    rgb888p_size = [1920, 1080]
     labels = ["Fall","NoFall"]  # 模型输出类别名称
     anchors = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]  # anchor设置
 

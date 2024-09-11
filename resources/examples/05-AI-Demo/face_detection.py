@@ -84,6 +84,9 @@ class FaceDetectionApp(AIBase):
 if __name__ == "__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    # k230保持不变，k230d可调整为[640,360]
+    rgb888p_size = [1920, 1080]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -98,7 +101,6 @@ if __name__ == "__main__":
     anchors_path = "/sdcard/examples/utils/prior_data_320.bin"
     anchors = np.fromfile(anchors_path, dtype=np.float)
     anchors = anchors.reshape((anchor_len, det_dim))
-    rgb888p_size = [1920, 1080]
 
     # 初始化PipeLine，用于图像处理流程
     pl = PipeLine(rgb888p_size=rgb888p_size, display_size=display_size, display_mode=display_mode)

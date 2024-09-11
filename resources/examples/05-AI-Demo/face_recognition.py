@@ -330,6 +330,9 @@ if __name__=="__main__":
     # 注意：执行人脸识别任务之前，需要先执行人脸注册任务进行人脸身份注册生成feature数据库
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
     display_mode="hdmi"
+    # k230保持不变，k230d可调整为[640,360]
+    rgb888p_size = [1920, 1080]
+
     if display_mode=="hdmi":
         display_size=[1920,1080]
     else:
@@ -341,7 +344,6 @@ if __name__=="__main__":
     # 其它参数
     anchors_path="/sdcard/examples/utils/prior_data_320.bin"
     database_dir ="/sdcard/examples/utils/db/"
-    rgb888p_size=[1920,1080]
     face_det_input_size=[320,320]
     face_reg_input_size=[112,112]
     confidence_threshold=0.5
