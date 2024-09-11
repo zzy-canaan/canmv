@@ -58,7 +58,8 @@ struct uart_configure {
     uint32_t reserved   : 21;
 };
 
-static bool uart_used[5] = {1, 0, 0, 1, 0};
+// uart0 for console used.
+static bool uart_used[5] = {1, 0, 0, 0, 0};
 
 STATIC void machine_uart_obj_check(machine_uart_obj_t *self) {
     if (self->status == 0) {
