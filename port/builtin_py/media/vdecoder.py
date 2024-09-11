@@ -11,8 +11,8 @@ from media.media import *
 # MAX_HEIGHT = 1920
 MAX_WIDTH = 1920
 MAX_HEIGHT = 1088
-STREAM_BUF_SIZE = MAX_WIDTH*MAX_HEIGHT
-FRAME_BUF_SIZE = MAX_WIDTH*MAX_HEIGHT*2
+STREAM_BUF_SIZE = MAX_WIDTH*MAX_HEIGHT//2
+FRAME_BUF_SIZE = MAX_WIDTH*MAX_HEIGHT*3//2
 INPUT_BUF_CNT = 4
 OUTPUT_BUF_CNT = 6
 
@@ -20,21 +20,32 @@ class Decoder:
     input_pool_id = [-1 for i in range(0,VDEC_MAX_CHN_NUMS)]
     output_pool_id = [-1 for i in range(0,VDEC_MAX_CHN_NUMS)]
     chns_enable = [0 for i in range(0,VDEC_MAX_CHN_NUMS)]
+    input_buf_cnt = INPUT_BUF_CNT
+    output_buf_cnt = OUTPUT_BUF_CNT
+    input_buf_size = STREAM_BUF_SIZE
+    output_buf_size = FRAME_BUF_SIZE
 
     @classmethod
     def vb_create_pool(cls,chn):
         pool_config = k_vb_pool_config()
-        pool_config.blk_cnt = INPUT_BUF_CNT
-        pool_config.blk_size = STREAM_BUF_SIZE
+        pool_config.blk_cnt = cls.input_buf_cnt
+        pool_config.blk_size = cls.input_buf_size
         pool_config.mode = VB_REMAP_MODE_NOCACHE
         cls.input_pool_id[chn] = kd_mpi_vb_create_pool(pool_config)
-        print("input_pool_id ",cls.input_pool_id[chn])
+        print("input_pool_id:%d,input_pool_size:%d,input_pool_cnt:%d" % (cls.input_pool_id[chn],cls.input_buf_size,cls.input_buf_cnt))
 
-        pool_config.blk_cnt = OUTPUT_BUF_CNT
-        pool_config.blk_size = FRAME_BUF_SIZE
+        pool_config.blk_cnt = cls.output_buf_cnt
+        pool_config.blk_size = cls.output_buf_size
         pool_config.mode = VB_REMAP_MODE_NOCACHE
         cls.output_pool_id[chn] = kd_mpi_vb_create_pool(pool_config)
-        print("output_pool_id ", cls.output_pool_id[chn])
+        print("output_pool_id:%d,output_pool_size:%d,output_pool_cnt:%d" % (cls.output_pool_id[chn],cls.output_buf_size,cls.output_buf_cnt))
+
+    @classmethod
+    def vb_pool_config(cls,input_buf_cnt,output_buf_cnt,input_buf_size = STREAM_BUF_SIZE, output_buf_size = FRAME_BUF_SIZE):
+        cls.input_buf_cnt = input_buf_cnt
+        cls.output_buf_cnt = output_buf_cnt
+        cls.input_buf_size = input_buf_size
+        cls.output_buf_size = output_buf_size
 
     @classmethod
     def vb_destory_pool(cls, chn):
