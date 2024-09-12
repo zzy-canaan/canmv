@@ -18,9 +18,9 @@ def exit_check():
     return False
 
 def record_audio(filename, duration):
-    CHUNK = int(44100/25)  #设置音频chunk值
-    FORMAT = paInt16       #设置采样精度
-    CHANNELS = 2           #设置声道数
+    CHUNK = 44100//25  #设置音频chunk值
+    FORMAT = paInt16       #设置采样精度,支持16bit(paInt16)/24bit(paInt24)/32bit(paInt32)
+    CHANNELS = 2           #设置声道数,支持单声道(1)/立体声(2)
     RATE = 44100           #设置采样率
 
     try:
@@ -98,9 +98,9 @@ def play_audio(filename):
 
 
 def loop_audio(duration):
-    CHUNK = int(44100/25)#设置音频chunck
-    FORMAT = paInt16 #设置音频采样精度
-    CHANNELS = 2 #设置音频声道数
+    CHUNK = 44100//25#设置音频chunck
+    FORMAT = paInt16 #设置音频采样精度,支持16bit(paInt16)/24bit(paInt24)/32bit(paInt32)
+    CHANNELS = 2 #设置音频声道数，支持单声道(1)/立体声(2)
     RATE = 44100 #设置音频采样率
 
     try:
