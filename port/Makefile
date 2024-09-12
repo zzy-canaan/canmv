@@ -42,27 +42,29 @@ INC += -I$(TOP)/lib/crypto-algorithms
 INC += -I$(BUILD)
 INC += -I$(SDK_SRC_ROOT_DIR)/include
 INC += -I$(BOARD_DIR)
-INC += -Iinclude/core
-INC += -Iinclude/machine
-INC += -Iinclude/maix
-INC += -Iinclude/mpp
-INC += -Iinclude/kpu
-INC += -Iinclude/omv
 INC += -Iinclude/ai_cube
 INC += -Iinclude/ai_demo
 INC += -Iinclude/ai_demo/kws
 INC += -Iinclude/ai_demo/tts_zh
-INC += -I3rd-party/ulab
-INC += -I3rd-party/wrap
-INC += -I3rd-party/lv_bindings
-INC += -I$(SDK_CANMV_BUILD_DIR)/freetype/include
+INC += -Iinclude/core
+INC += -Iinclude/kpu
+INC += -Iinclude/machine
+INC += -Iinclude/maix
+INC += -Iinclude/mpp
+INC += -Iinclude/multi_media
+INC += -Iinclude/omv
 INC += -Iomv/alloc
 INC += -Iomv/boards/canmv
 INC += -Iomv/common
 INC += -Iomv/imlib
 INC += -Iomv/modules
-INC += $(SDK_MPP_USER_INC) $(SDK_RTSMART_INC) $(NNCASE_INC) $(OPENCV_INC)
+INC += -I3rd-party/ulab
+INC += -I3rd-party/wrap
+INC += -I3rd-party/lv_bindings
+INC += -I$(SDK_CANMV_BUILD_DIR)/freetype/include
+INC += -I$(SDK_RTSMART_SRC_DIR)/mpp/middleware/src/rtsp_server/include
 INC += -I$(SDK_RTSMART_SRC_DIR)/mpp/middleware/src/mp4_format/include
+INC += $(SDK_MPP_USER_INC) $(SDK_RTSMART_INC) $(NNCASE_INC) $(OPENCV_INC)
 
 # compiler settings
 # Debugging/Optimization
@@ -124,6 +126,7 @@ MODULES_SRC_C = $(wildcard modules/*.c)
 MODULES_SRC_C += $(wildcard modules/*/*.c)
 OMV_SRC_C = $(wildcard omv/*.c)
 OMV_SRC_C += $(wildcard omv/*/*.c)
+MULTIMEDIA_SRC_C = $(wildcard multi_media/*.c)
 
 NETWORK_SRC_C :=
 ifneq ($(filter y,$(CONFIG_ENABLE_NETWORK_RT_WLAN) $(CONFIG_ENABLE_NETWORK_RT_LAN)),)
@@ -175,7 +178,8 @@ SRC_C += \
 	${AIDEMO_SRC_C} \
 	${MODULES_SRC_C} \
 	${LVGL_SRC_C} \
-	${FREETYPE_C}
+	${FREETYPE_C} \
+	${MULTIMEDIA_SRC_C}
 
 KPU_SRC_CXX = $(wildcard kpu/*.cpp)
 AICUBE_SRC_CXX = $(wildcard ai_cube/*.cpp)
@@ -184,6 +188,7 @@ AIDEMO_KWS_SRC_CXX = $(wildcard ai_demo/kws/*.cpp)
 AIDEMO_TTS_ZH_SRC_CXX = $(wildcard ai_demo/tts_zh/*.cpp)
 MODULES_SRC_CXX = $(wildcard modules/*.cpp)
 MODULES_SRC_CXX += $(wildcard modules/*/*.cpp)
+MULTIMEDIA_SRC_CXX = $(wildcard multi_media/*.cpp)
 
 SRC_CXX += \
 	${KPU_SRC_CXX} \
@@ -192,6 +197,7 @@ SRC_CXX += \
 	${AIDEMO_KWS_SRC_CXX} \
 	${AIDEMO_TTS_ZH_SRC_CXX} \
 	${MODULES_SRC_CXX} \
+	${MULTIMEDIA_SRC_CXX}
 
 OBJ = $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
@@ -211,8 +217,12 @@ CFLAGS += $(CWARN)
 LDFLAGS_ARCH = -Wl,-Map=$@.map,--cref -Wl,--gc-sections
 LDFLAGS += -T core/link.lds --static
 
+# rtsp server
+RTSP_SERVER_LIBS := 
+RTSP_SERVER_LIBS += -L$(SDK_RTSMART_SRC_DIR)/mpp/middleware/lib -lrtsp_server -lliveMedia -lgroupsock -lBasicUsageEnvironment -lUsageEnvironment
+
 LDFLAGS_LIBS := $(NNCASE_LIB_DIR) $(OPENCV_LIB_DIR) $(SDK_MPP_USER_LIB_DIR) $(SDK_MPP_MIDDLEWARE_LIB_DIR) -L$(SDK_CANMV_BUILD_DIR)/freetype/
-LDFLAGS_LIBS += -Wl,--start-group -lm -lpthread -lfreetype -lmp4 $(NNCASE_LIBS) $(OPENCV_LIBS) $(SDK_MPP_USER_LIBS) -Wl,--end-group
+LDFLAGS_LIBS += -Wl,--start-group -lm -lpthread -lfreetype -lmp4 $(NNCASE_LIBS) $(OPENCV_LIBS) $(SDK_MPP_USER_LIBS) $(RTSP_SERVER_LIBS) -Wl,--end-group
 
 LDFLAGS += $(LDFLAGS_MOD) $(LDFLAGS_ARCH) $(LDFLAGS_LIBS) $(LDFLAGS_EXTRA)
 
