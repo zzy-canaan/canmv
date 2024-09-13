@@ -39,6 +39,8 @@ class RtspServer:
 
 
     def stop(self):
+        if (self.start_stream == False):
+            return
         # 等待推流线程退出
         self.start_stream = False
         while not self.runthread_over:
@@ -106,10 +108,12 @@ class RtspServer:
                 # 释放一帧码流
                 self.encoder.ReleaseStream(self.venc_chn, streamData)
 
-        except KeyboardInterrupt as e:
-            print("user stop: ", e)
         except BaseException as e:
-            sys.print_exception(e)
+            print(f"Exception {e}")
+        finally:
+            self.runthread_over = True
+            # 停止rtsp server
+            self.stop()
 
         self.runthread_over = True
 
