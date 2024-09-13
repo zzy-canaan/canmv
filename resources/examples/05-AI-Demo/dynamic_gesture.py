@@ -563,7 +563,7 @@ class DynamicGesture:
 
 if __name__=="__main__":
     # 显示模式，默认"hdmi",可以选择"hdmi"和"lcd"
-    display_mode="hdmi",
+    display_mode="hdmi"
     # k230保持不变，k230d可调整为[640,360]
     rgb888p_size=[1920,1080]
 
