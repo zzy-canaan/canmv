@@ -488,6 +488,7 @@ STATIC mp_uint_t network_rt_wlan_socket_recv(struct _mod_network_socket_obj_t *_
         return -1;
     }
 
+#if 0
     int ret = recv(_socket->fileno, buf, len, 0);
     if (ret < 0) {
         *_errno = errno;
@@ -502,6 +503,35 @@ STATIC mp_uint_t network_rt_wlan_socket_recv(struct _mod_network_socket_obj_t *_
     }
 
     return ret;
+#else
+    int ret;
+    mp_uint_t received = 0;
+    mp_uint_t curr_tick_ms = mp_hal_ticks_ms();
+    mp_uint_t stop_ms = curr_tick_ms + 3000; // timeout 3s
+
+    do {
+        ret = recv(_socket->fileno, buf + received, len - received, 0);
+
+        if(0 > ret) {
+            *_errno = errno;
+
+            debug_printf("socket_recv() -> errno %d %d\n", *_errno, ret);
+
+            if(EAGAIN == *_errno) {
+                curr_tick_ms = mp_hal_ticks_ms();
+                if(curr_tick_ms > stop_ms) {
+                    return received;
+                }
+                continue;
+            }
+            break;
+        } else {
+            received += ret;
+        }
+    } while(received < len);
+
+    return received;
+#endif
 }
 
 STATIC mp_uint_t network_rt_wlan_socket_sendto(struct _mod_network_socket_obj_t *_socket, const byte *buf, mp_uint_t len, byte *ip, mp_uint_t port, int *_errno)
@@ -547,6 +577,8 @@ STATIC mp_uint_t network_rt_wlan_socket_recvfrom(struct _mod_network_socket_obj_
     addr.sin_family = _socket->domain;
 
     *port = 0;
+
+#if 0
     int ret = recvfrom(_socket->fileno, buf, len, 0, (struct sockaddr *)&addr, &server_addr_len);
     if (ret < 0) {
         *_errno = errno;
@@ -564,6 +596,33 @@ STATIC mp_uint_t network_rt_wlan_socket_recvfrom(struct _mod_network_socket_obj_
     memcpy(ip, &addr.sin_addr.s_addr, sizeof(addr.sin_addr));
 
     return ret;
+#else
+    int ret = -1;
+    mp_uint_t received = 0;
+    mp_uint_t curr_tick_ms = mp_hal_ticks_ms();
+    mp_uint_t stop_ms = curr_tick_ms + 3000; // timeout 3s
+
+    do {
+        ret = recvfrom(_socket->fileno, buf + received, len - received, 0, (struct sockaddr *)&addr, &server_addr_len);
+
+        if(0 > ret) {
+            *_errno = errno;
+            debug_printf("socket_recvfrom() -> errno %d\n", *_errno);
+
+            if(EAGAIN == *_errno) {
+                curr_tick_ms = mp_hal_ticks_ms();
+                if(curr_tick_ms > stop_ms) {
+                    return received;
+                }
+                continue;
+            }
+        } else {
+            received += ret;
+        }
+    } while(received < len);
+
+    return received;
+#endif
 }
 
 STATIC int network_rt_wlan_socket_setsockopt(struct _mod_network_socket_obj_t *_socket, mp_uint_t level, mp_uint_t opt, const void *optval, mp_uint_t optlen, int *_errno)

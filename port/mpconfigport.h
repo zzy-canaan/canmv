@@ -43,7 +43,7 @@
 #define MICROPY_PY_SYS_PLATFORM  "rt-smart"
 
 #ifndef MICROPY_PY_SYS_PATH_DEFAULT
-#define MICROPY_PY_SYS_PATH_DEFAULT ".frozen:/sdcard"
+#define MICROPY_PY_SYS_PATH_DEFAULT ".frozen:/sdcard:/data"
 #endif
 
 #define MP_STATE_PORT MP_STATE_VM

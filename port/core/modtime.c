@@ -41,6 +41,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+#include "generated/autoconf.h"
+
 STATIC mp_obj_t mp_time_time_get(void) {
     return mp_obj_new_int((mp_int_t)time(NULL));
 }
@@ -104,12 +106,15 @@ void mp_hal_delay_ms(mp_uint_t ms) {
 STATIC mp_obj_t mod_time_gm_local_time(size_t n_args, const mp_obj_t *args, struct tm *(*time_func)(const time_t *timep)) {
     time_t t;
     if (n_args == 0) {
+#ifndef CONFIG_BOARD_NOT_SUPPORT_HW_RTC
 #define MISC_DEV_CMD_GET_TIME_T  (0x1024 + 4)
         int fd = open("/dev/canmv_misc", O_RDONLY);
         if(0 < fd) {
             ioctl(fd, MISC_DEV_CMD_GET_TIME_T, &t);
             close(fd);
-        } else {
+        } else 
+#endif
+        {
             t = time(NULL);
         }
     } else {
