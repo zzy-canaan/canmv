@@ -377,7 +377,8 @@ int kd_mpi_vo_osd_rotation(int flag, k_video_frame_info *in, k_video_frame_info 
 
     extern void memcpy_fast(void *dst, void *src, size_t size);
     uint32_t size = out->v_frame.stride[0] * out->v_frame.height;
-    void *tmp_addr = kd_mpi_sys_mmap(tmp.v_frame.phys_addr[0], size);
+    void *tmp_addr = kd_mpi_sys_mmap_cached(tmp.v_frame.phys_addr[0], size);
+    kd_mpi_sys_mmz_flush_cache(tmp.v_frame.phys_addr[0], tmp_addr, size);
     memcpy_fast(out->v_frame.virt_addr[0], tmp_addr, size);
     kd_mpi_sys_munmap(tmp_addr, size);
     kd_mpi_dma_release_frame(OSD_ROTATION_DMA_CHN, &tmp);
