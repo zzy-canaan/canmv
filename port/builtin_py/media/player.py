@@ -209,7 +209,7 @@ class Player:
         self.play_status = PLAY_PAUSE
 
     def resume(self):
-        pself.play_status = PLAY_START
+        self.play_status = PLAY_START
 
     def set_event_callback(self,callback):
         self.callback = callback
