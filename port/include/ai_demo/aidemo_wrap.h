@@ -98,7 +98,8 @@ extern "C" {
     TtsZhOutput* tts_zh_frontend_preprocess(TtsZh* ttszh_,const char* text);
     void tts_save_wav(float* wav_data,int wav_len,const char* wav_filename,int sample_rate);
     // for body_seg
-    uint8_t* body_seg_postprocess(float* data, int num_class, FrameSize ori_shape, FrameSize dst_shape,uint8_t* color);
+    uint8_t* body_seg_postprocess(float* data, int num_class, FrameSize ori_shape, FrameSize dst_shape, uint8_t* color);
+    SegOutputs yolov5_seg_postprocess(float *output0, float *output1, FrameSize frame_shape, FrameSize input_shape, FrameSize display_shape, int calss_num, float conf_thresh, float nms_thresh, float mask_thresh,int *box_cnt);
 #ifdef __cplusplus
 }
 #endif
