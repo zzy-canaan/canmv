@@ -45,18 +45,18 @@ class PipeLine:
         self.debug_mode=debug_mode
 
     # PipeLine初始化函数
-    def create(self,sensor=None,hmirror=None,vflip=None,fps=30):
+    def create(self,sensor=None,hmirror=None,vflip=None,fps=60):
         with ScopedTiming("init PipeLine",self.debug_mode > 0):
             os.exitpoint(os.EXITPOINT_ENABLE)
             nn.shrink_memory_pool()
             # 初始化并配置sensor
             brd=os.uname()[-1]
             if brd=="k230d_canmv_bpi_zero":
-                self.sensor = Sensor(fps=fps) if sensor is None else sensor
+                self.sensor = Sensor(fps=30) if sensor is None else sensor
             elif brd=="k230_canmv_lckfb":
-                self.sensor = Sensor(fps=fps) if sensor is None else sensor
+                self.sensor = Sensor(fps=30) if sensor is None else sensor
             else:
-                self.sensor = Sensor() if sensor is None else sensor
+                self.sensor = Sensor(fps=fps) if sensor is None else sensor
             self.sensor.reset()
             if hmirror is not None and (hmirror==True or hmirror==False):
                 self.sensor.set_hmirror(hmirror)

@@ -874,7 +874,7 @@ STATIC mp_obj_t aidemo_body_seg_postprocess(size_t n_args, const mp_obj_t *args)
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(aidemo_body_seg_postprocess_obj, 5, 5, aidemo_body_seg_postprocess);
 
 //***********************************for yolo seg ******************/
-STATIC mp_obj_t aidemo_yolo_seg_postprocess(size_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t aidemo_yolov5_seg_postprocess(size_t n_args, const mp_obj_t *args) {
     ndarray_obj_t *data_mp_0 = MP_ROM_PTR(args[0]);
     float *output0 = data_mp_0->array;
 
@@ -942,7 +942,79 @@ STATIC mp_obj_t aidemo_yolo_seg_postprocess(size_t n_args, const mp_obj_t *args)
     return MP_OBJ_FROM_PTR(results_mp_list);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(aidemo_yolo_seg_postprocess_obj, 10, 10, aidemo_yolo_seg_postprocess);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(aidemo_yolov5_seg_postprocess_obj, 10, 10, aidemo_yolov5_seg_postprocess);
+
+
+//***********************************for yolo seg ******************/
+STATIC mp_obj_t aidemo_yolov8_seg_postprocess(size_t n_args, const mp_obj_t *args) {
+    ndarray_obj_t *data_mp_0 = MP_ROM_PTR(args[0]);
+    float *output0 = data_mp_0->array;
+
+    ndarray_obj_t *data_mp_1 = MP_ROM_PTR(args[1]);
+    float *output1 = data_mp_1->array;
+
+    mp_obj_list_t *frame_size_mp = MP_OBJ_TO_PTR(args[2]);
+    mp_obj_list_t *kmodel_input_size_mp = MP_OBJ_TO_PTR(args[3]);
+    mp_obj_list_t *display_size_mp = MP_OBJ_TO_PTR(args[4]);
+
+    int num_class = mp_obj_get_int(args[5]);
+
+    float conf_thresh=mp_obj_get_float(args[6]);
+    float nms_thresh=mp_obj_get_float(args[7]);
+    float mask_thresh=mp_obj_get_float(args[8]);
+
+    FrameSize frame_shape;
+    FrameSize input_shape;
+    FrameSize display_shape;
+
+    frame_shape.height = mp_obj_get_int(frame_size_mp->items[0]);
+    frame_shape.width = mp_obj_get_int(frame_size_mp->items[1]);
+    input_shape.height = mp_obj_get_int(kmodel_input_size_mp->items[0]);
+    input_shape.width = mp_obj_get_int(kmodel_input_size_mp->items[1]);
+    display_shape.height = mp_obj_get_int(display_size_mp->items[0]);
+    display_shape.width = mp_obj_get_int(display_size_mp->items[1]);
+
+    int box_cnt;
+    ndarray_obj_t *masks_results = MP_ROM_PTR(args[9]);
+    uint8_t *masks_results_data = (uint8_t *)masks_results->array;
+
+    SegOutputs segOutputs = yolov8_seg_postprocess(output0, output1, frame_shape, input_shape, display_shape,num_class, conf_thresh,nms_thresh,mask_thresh,&box_cnt);
+
+    mp_obj_list_t *results_mp_list = mp_obj_new_list(0, NULL);
+    mp_obj_list_t *results_mp_list_boxes = mp_obj_new_list(0, NULL);
+    mp_obj_list_t *results_mp_list_ids = mp_obj_new_list(0, NULL);
+    mp_obj_list_t *results_mp_list_scores = mp_obj_new_list(0, NULL);
+    
+    for (int i = 0; i < display_shape.height * display_shape.width * 4; i++)
+    {
+        masks_results_data[i] = segOutputs.masks_results[i];
+    }
+
+    size_t ndarray_shape_box[4];
+    ndarray_shape_box[3] = 4;
+    for (int i = 0; i < box_cnt; i++)
+    {
+        ndarray_obj_t *box_obj = ndarray_new_ndarray(1, ndarray_shape_box, NULL, NDARRAY_INT16);
+        int16_t *box_data = (int16_t *)box_obj->array;
+        for (int j = 0; j < 4; j++)
+        {
+            box_data[j] = segOutputs.segOutput[i].box[j];
+        }
+        mp_obj_list_append(results_mp_list_boxes, box_obj);
+        mp_obj_list_append(results_mp_list_ids, mp_obj_new_int(segOutputs.segOutput[i].id));
+        mp_obj_list_append(results_mp_list_scores, mp_obj_new_float(segOutputs.segOutput[i].confidence));
+    }
+    mp_obj_list_append(results_mp_list, results_mp_list_boxes);
+    mp_obj_list_append(results_mp_list, results_mp_list_ids);
+    mp_obj_list_append(results_mp_list, results_mp_list_scores);
+
+
+    free(segOutputs.masks_results);
+    free(segOutputs.segOutput);
+    return MP_OBJ_FROM_PTR(results_mp_list);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(aidemo_yolov8_seg_postprocess_obj, 10, 10, aidemo_yolov8_seg_postprocess);
 
 
 STATIC const mp_rom_map_elem_t aidemo_globals_table[] = {
@@ -969,7 +1041,8 @@ STATIC const mp_rom_map_elem_t aidemo_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_tts_zh_preprocess), MP_ROM_PTR(&aidemo_tts_zh_preprocess_obj) },
     { MP_ROM_QSTR(MP_QSTR_save_wav), MP_ROM_PTR(&aidemo_save_wav_obj) },
     { MP_ROM_QSTR(MP_QSTR_body_seg_postprocess), MP_ROM_PTR(&aidemo_body_seg_postprocess_obj) },
-    { MP_ROM_QSTR(MP_QSTR_yolo_seg_postprocess), MP_ROM_PTR(&aidemo_yolo_seg_postprocess_obj) },
+    { MP_ROM_QSTR(MP_QSTR_yolov5_seg_postprocess), MP_ROM_PTR(&aidemo_yolov5_seg_postprocess_obj) },
+    { MP_ROM_QSTR(MP_QSTR_yolov8_seg_postprocess), MP_ROM_PTR(&aidemo_yolov8_seg_postprocess_obj) },
 
 };
 

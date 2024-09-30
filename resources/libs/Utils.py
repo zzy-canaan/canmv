@@ -1,3 +1,5 @@
+import ulab.numpy as np
+
 color_four = [
     (255, 220, 20, 60),
     (255, 119, 11, 32),
@@ -88,3 +90,29 @@ def get_colors(classes_num):
         # 使用模运算来循环获取颜色
         colors.append(color_four[i % num_available_colors])
     return colors
+
+def center_crop_param(input_size):
+    if len(input_size)==2:
+        m=min(input_size[0],input_size[1])
+        top=(input_size[1]-m)//2
+        left=(input_size[0]-m)//2
+        return top,left,m
+
+def letterbox_pad_param(input_size,output_size):
+    ratio_w = output_size[0] / input_size[0]  # 宽度缩放比例
+    ratio_h = output_size[1] / input_size[1]   # 高度缩放比例
+    ratio = min(ratio_w, ratio_h)  # 取较小的缩放比例
+    new_w = int(ratio * input_size[0])  # 新宽度
+    new_h = int(ratio * input_size[1])  # 新高度
+    dw = (output_size[0] - new_w) / 2  # 宽度差
+    dh = (output_size[0] - new_h) / 2  # 高度差
+    top = int(round(0))
+    bottom = int(round(dh * 2 + 0.1))
+    left = int(round(0))
+    right = int(round(dw * 2 - 0.1))
+    return top, bottom, left, right,ratio
+
+# softmax函数
+def softmax(x):
+    exp_x = np.exp(x - np.max(x))
+    return exp_x / np.sum(exp_x)
