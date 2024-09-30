@@ -305,3 +305,122 @@ SegOutputs yolov5_seg_postprocess(float *output0, float *output1, FrameSize fram
 
 	return segOutputs;
 }
+
+SegOutputs yolov8_seg_postprocess(float *output0, float *output1, FrameSize frame_shape, FrameSize input_shape, FrameSize display_shape, int class_num,float conf_thresh, float nms_thresh, float mask_thresh, int *box_cnt)
+{
+    std::vector<cv::Scalar> class_colors = getColorsForClasses(class_num);
+    float ratio_w=input_shape.width/(frame_shape.width*1.0);
+    float ratio_h=input_shape.height/(frame_shape.height*1.0);
+    float scale=MIN(ratio_w,ratio_h);
+    int new_w=int(frame_shape.width*scale);
+    int new_h=int(frame_shape.height*scale);
+    int pad_w=MAX(input_shape.width-new_w,0);
+    int pad_h=MAX(input_shape.height-new_h,0);
+
+	std::vector<OutputSeg> results;
+    std::vector<int> classIds;//结果id数组
+	std::vector<float> confidences;//结果每个id对应置信度数组
+	std::vector<cv::Rect> boxes;//每个id矩形框
+	std::vector<cv::Mat> picked_proposals;  //后续计算mask
+    // output0 (39,2100);output1 (32,80,80)
+    int f_len=class_num+4+32;
+    int mask_w=input_shape.width/4;
+    int mask_h=input_shape.height/4;
+    int num_box=((input_shape.width/8)*(input_shape.height/8)+(input_shape.width/16)*(input_shape.height/16)+(input_shape.width/32)*(input_shape.height/32));
+
+    cv::Mat protos = cv::Mat(32, mask_w * mask_h, CV_32FC1, output1);
+    sync();
+
+    for(int i=0;i<num_box;i++){
+        float* vec=output0+i*f_len;
+        float box[4]={vec[0],vec[1],vec[2],vec[3]};
+        float* class_scores=vec+4;
+        float* max_class_score_ptr=std::max_element(class_scores,class_scores+class_num);
+        float score=*max_class_score_ptr;
+        int max_class_index = max_class_score_ptr - class_scores; // 计算索引
+        if(score>conf_thresh){
+            float x_=box[0]/scale*(display_shape.width/(frame_shape.width*1.0));
+            float y_=box[1]/scale*(display_shape.height/(frame_shape.height*1.0));
+            float w_=box[2]/scale*(display_shape.width/(frame_shape.width*1.0));
+            float h_=box[3]/scale*(display_shape.height/(frame_shape.height*1.0));
+            int x=int(MAX(x_-0.5*w_,0));
+            int y=int(MAX(y_-0.5*h_,0));
+            int w=int(w_);
+            int h=int(h_);
+            if (w <= 0 || h <= 0) { continue; }
+            cv::Mat mask_map(1, 32, CV_32F, vec + class_num + 4);
+            classIds.push_back(max_class_index);
+			confidences.push_back(score);
+			boxes.push_back(cv::Rect(x,y,w,h));
+            picked_proposals.push_back(mask_map);
+        }
+
+    }
+
+	//执行非最大抑制以消除具有较低置信度的冗余重叠框（NMS）
+	std::vector<int> nms_result;
+	nms_yolo_boxes(boxes, confidences, conf_thresh, nms_thresh, nms_result);
+
+	std::vector<cv::Mat> temp_mask_proposals;
+	std::vector<OutputSeg> output;
+	cv::Rect holeImgRect(0, 0, display_shape.width, display_shape.height);
+	for (int i = 0; i < nms_result.size(); ++i) {
+		int idx = nms_result[i];
+		OutputSeg result;
+		result.id = classIds[idx];
+		result.confidence = confidences[idx];
+		result.box = boxes[idx]& holeImgRect;
+		output.push_back(result);
+		temp_mask_proposals.push_back(picked_proposals[idx]);
+	}
+
+	// 处理mask
+	int segWidth = mask_w;
+    int segHeight = mask_h;
+	if(temp_mask_proposals.size() > 0)
+	{	cv::Mat maskProposals;
+		for (int i = 0; i < temp_mask_proposals.size(); ++i)
+		{
+			maskProposals.push_back(temp_mask_proposals[i]);
+		}
+
+		cv::Mat matmulRes = (maskProposals * protos).t();//n*32 32*6400 A*B是以数学运算中矩阵相乘的方式实现的，要求A的列数等于B的行数时
+		cv::Mat masks = matmulRes.reshape(output.size(), { segWidth,segHeight });//n*80*80
+		std::vector<cv::Mat> maskChannels;
+		cv::split(masks, maskChannels);
+		cv::Rect roi(0, 0, int(segWidth-int(pad_w*((segWidth*1.0)/frame_shape.width))), int(segHeight - int(pad_h*((segHeight*1.0)/frame_shape.height))));
+
+		for (int i = 0; i < output.size(); ++i) {
+			cv::Mat dest, mask;
+			cv::exp(-maskChannels[i], dest);//sigmoid
+			dest = 1.0 / (1.0 + dest);//80*80
+			dest = dest(roi);
+			resize(dest, mask, cv::Size(display_shape.width, display_shape.height), cv::INTER_NEAREST);
+			//crop----截取box中的mask作为该box对应的mask
+			cv::Rect temp_rect = output[i].box;
+			mask = mask(temp_rect) > mask_thresh;
+			output[i].boxMask = mask;
+		}
+		results=output;
+	}
+
+	cv::Mat osd_frame(display_shape.height, display_shape.width, CV_8UC4, cv::Scalar(0, 0, 0, 0));
+	draw_yolo_segmentation(osd_frame, results,class_colors);
+
+	SegOutputs segOutputs;
+	segOutputs.masks_results = (uint8_t *)malloc(display_shape.width * display_shape.height * 4 * sizeof(uint8_t));
+    memcpy(segOutputs.masks_results, osd_frame.data, sizeof(uint8_t) * display_shape.width * display_shape.height * 4 );
+	*box_cnt = results.size();
+	segOutputs.segOutput = (SegOutput *)malloc(*box_cnt * sizeof(SegOutput));
+	for (int i = 0; i < *box_cnt; i++)
+	{
+		segOutputs.segOutput[i].confidence = results[i].confidence;
+		segOutputs.segOutput[i].id = results[i].id;
+		segOutputs.segOutput[i].box[0] = results[i].box.x;
+		segOutputs.segOutput[i].box[1] = results[i].box.y;
+		segOutputs.segOutput[i].box[2] = results[i].box.width;
+		segOutputs.segOutput[i].box[3] = results[i].box.height;
+	}
+
+	return segOutputs;
+}
