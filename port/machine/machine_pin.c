@@ -45,7 +45,7 @@
 
 /* ioctl */
 #define GPIO_DEVICE_NAME "/dev/gpio"
-#define MAX_GPIO_NUM 63
+#define MAX_GPIO_NUM (63 + 8)
 #define GPIO_DM_OUTPUT _IOW('G', 0, int)
 #define GPIO_DM_INPUT _IOW('G', 1, int)
 #define GPIO_DM_INPUT_PULL_UP _IOW('G', 2, int)
