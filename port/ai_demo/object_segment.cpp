@@ -163,7 +163,7 @@ void nms_boxes(std::vector<cv::Rect> &boxes, std::vector<float> &confidences, fl
 		bboxes.push_back(bbox);
 	}
 
-	sort(bboxes.begin(), bboxes.end(), [](BBOX a, BBOX b) { return a.confidence < b.confidence; });
+	sort(bboxes.begin(), bboxes.end(), [](BBOX a, BBOX b) { return a.confidence > b.confidence; });
 
 	int updated_size = bboxes.size();
 	for (i = 0; i < updated_size; i++)
