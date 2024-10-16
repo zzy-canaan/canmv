@@ -72,8 +72,7 @@ class Ai2d:
 
     # 使用ai2d完成预处理
     def run(self,input_np):
-        with ScopedTiming("ai2d run",self.debug_mode > 0):
-            self.ai2d_input_tensor = nn.from_numpy(input_np)
-            # 运行ai2d做初始化
-            self.ai2d_builder.run(self.ai2d_input_tensor, self.ai2d_output_tensor)
-            return self.ai2d_output_tensor
+        self.ai2d_input_tensor = nn.from_numpy(input_np)
+        # 运行ai2d做初始化
+        self.ai2d_builder.run(self.ai2d_input_tensor, self.ai2d_output_tensor)
+        return self.ai2d_output_tensor
