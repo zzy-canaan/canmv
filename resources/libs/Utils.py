@@ -105,7 +105,7 @@ def letterbox_pad_param(input_size,output_size):
     new_w = int(ratio * input_size[0])  # 新宽度
     new_h = int(ratio * input_size[1])  # 新高度
     dw = (output_size[0] - new_w) / 2  # 宽度差
-    dh = (output_size[0] - new_h) / 2  # 高度差
+    dh = (output_size[1] - new_h) / 2  # 高度差
     top = int(round(0))
     bottom = int(round(dh * 2 + 0.1))
     left = int(round(0))

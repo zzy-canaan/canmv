@@ -44,13 +44,15 @@ class AIBase:
             return [self.ai2d.run(input_np)]
 
     def inference(self,tensors):
-        with ScopedTiming("kpu run & get output",self.debug_mode > 0):
+        with ScopedTiming("set input",self.debug_mode > 0):
             self.results.clear()
             for i in range(self.kpu.inputs_size()):
                 # 将ai2d的输出tensor绑定为kmodel的输入数据
                 self.kpu.set_input_tensor(i, tensors[i])
+        with ScopedTiming("kpu run",self.debug_mode > 0):
             # 运行kmodel做推理
             self.kpu.run()
+        with ScopedTiming("get output",self.debug_mode > 0):
             # 获取kmodel的推理输出tensor,输出可能为多个，因此返回的是一个列表
             for i in range(self.kpu.outputs_size()):
                 output_data = self.kpu.get_output_tensor(i)
