@@ -300,7 +300,7 @@ SegOutputs object_seg_post_process(float *data_0, float *data_1, FrameSize frame
 		cv::Mat protos = cv::Mat(SEGCHANNELS, segWidth * segHeight, CV_32FC1, output_1);
 		sync();
 		cv::Mat matmulRes = (maskProposals * protos).t();//n*32 32*25600 A*B是以数学运算中矩阵相乘的方式实现的，要求A的列数等于B的行数时
-		cv::Mat masks = matmulRes.reshape(output.size(), { segWidth,segHeight });//n*160*160
+		cv::Mat masks = matmulRes.reshape(output.size(), { segHeight,segWidth });//n*160*160
 
 		std::vector<cv::Mat> maskChannels;
 		cv::split(masks, maskChannels);
