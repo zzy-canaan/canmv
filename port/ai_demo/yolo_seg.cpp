@@ -266,10 +266,10 @@ SegOutputs yolov5_seg_postprocess(float *output0, float *output1, FrameSize fram
 		}
 
 		cv::Mat matmulRes = (maskProposals * protos).t();//n*32 32*6400 A*B是以数学运算中矩阵相乘的方式实现的，要求A的列数等于B的行数时
-		cv::Mat masks = matmulRes.reshape(output.size(), { segWidth,segHeight });//n*80*80
+		cv::Mat masks = matmulRes.reshape(output.size(), { segHeight,segWidth });//n*80*80
 		std::vector<cv::Mat> maskChannels;
 		cv::split(masks, maskChannels);
-		cv::Rect roi(0, 0, int(segWidth-int(pad_w*((segWidth*1.0)/frame_shape.width))), int(segHeight - int(pad_h*((segHeight*1.0)/frame_shape.height))));
+		cv::Rect roi(0, 0, int(segWidth-int(pad_w*((segWidth*1.0)/input_shape.width))), int(segHeight - int(pad_h*((segHeight*1.0)/input_shape.height))));
 
 		for (int i = 0; i < output.size(); ++i) {
 			cv::Mat dest, mask;
@@ -356,7 +356,6 @@ SegOutputs yolov8_seg_postprocess(float *output0, float *output1, FrameSize fram
         }
 
     }
-
 	//执行非最大抑制以消除具有较低置信度的冗余重叠框（NMS）
 	std::vector<int> nms_result;
 	nms_yolo_boxes(boxes, confidences, conf_thresh, nms_thresh, nms_result);
@@ -373,7 +372,6 @@ SegOutputs yolov8_seg_postprocess(float *output0, float *output1, FrameSize fram
 		output.push_back(result);
 		temp_mask_proposals.push_back(picked_proposals[idx]);
 	}
-
 	// 处理mask
 	int segWidth = mask_w;
     int segHeight = mask_h;
@@ -385,11 +383,11 @@ SegOutputs yolov8_seg_postprocess(float *output0, float *output1, FrameSize fram
 		}
 
 		cv::Mat matmulRes = (maskProposals * protos).t();//n*32 32*6400 A*B是以数学运算中矩阵相乘的方式实现的，要求A的列数等于B的行数时
-		cv::Mat masks = matmulRes.reshape(output.size(), { segWidth,segHeight });//n*80*80
+		cv::Mat masks = matmulRes.reshape(output.size(), { segHeight, segWidth });//n*80*80
 		std::vector<cv::Mat> maskChannels;
 		cv::split(masks, maskChannels);
-		cv::Rect roi(0, 0, int(segWidth-int(pad_w*((segWidth*1.0)/frame_shape.width))), int(segHeight - int(pad_h*((segHeight*1.0)/frame_shape.height))));
 
+		cv::Rect roi(0, 0, int(segWidth-int(pad_w*((segWidth*1.0)/input_shape.width))),int(segHeight - int(pad_h*((segHeight*1.0)/input_shape.height))));
 		for (int i = 0; i < output.size(); ++i) {
 			cv::Mat dest, mask;
 			cv::exp(-maskChannels[i], dest);//sigmoid
@@ -421,6 +419,5 @@ SegOutputs yolov8_seg_postprocess(float *output0, float *output1, FrameSize fram
 		segOutputs.segOutput[i].box[2] = results[i].box.width;
 		segOutputs.segOutput[i].box[3] = results[i].box.height;
 	}
-
 	return segOutputs;
 }
