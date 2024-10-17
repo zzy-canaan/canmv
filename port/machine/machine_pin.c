@@ -76,6 +76,91 @@ typedef struct {
 
 static int gpio_fd = -1;
 
+void machine_pin_value_set(mp_obj_t self_in, int value) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    gpio_config_t gpio_cfg = { .pin = self->pin };
+
+    if (ioctl(gpio_fd, value > 0 ? GPIO_WRITE_HIGH : GPIO_WRITE_LOW, &gpio_cfg)) {
+        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("gpio set output level error"));
+    }
+}
+
+int machine_pin_value_get(mp_obj_t self_in) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    gpio_config_t gpio_cfg = { .pin = self->pin };
+
+    if (ioctl(gpio_fd, GPIO_READ_VALUE, &gpio_cfg)) {
+        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("gpio read input level error"));
+    }
+
+    return gpio_cfg.value;
+}
+
+void machine_pin_mode_set(mp_obj_t self_in, int value) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    gpio_config_t gpio_cfg = { .pin = self->pin };
+
+    if (ioctl(gpio_fd, value == DIR_OUT ? GPIO_DM_OUTPUT : GPIO_DM_INPUT, &gpio_cfg)) {
+        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("gpio set dir error"));
+    }
+
+    self->mode = value == DIR_OUT ? DIR_OUT : DIR_IN;
+}
+
+int machine_pin_mode_get(mp_obj_t self_in) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    return self->mode;
+}
+
+void machine_pin_pull_set(mp_obj_t self_in, int value) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    struct st_iomux_reg reg_cfg;
+
+    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
+    value = value < 0 ? 0 : value;
+    reg_cfg.u.bit.pu = (value & PULL_UP) ? 1 : 0;
+    reg_cfg.u.bit.pd = (value & PULL_DOWN) ? 1 : 0;
+    fpioa_drv_reg_set(self->pin, reg_cfg.u.value);
+}
+
+int machine_pin_pull_get(mp_obj_t self_in) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    struct st_iomux_reg reg_cfg;
+    int value = 0;
+
+    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
+    value |= (reg_cfg.u.bit.pu ? PULL_UP : 0);
+    value |= (reg_cfg.u.bit.pd ? PULL_DOWN : 0);
+
+    return value;
+}
+
+void machine_pin_drive_set(mp_obj_t self_in, int value) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    struct st_iomux_reg reg_cfg;
+
+    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
+    reg_cfg.u.bit.ds = value < 0 ? 0 : value > 0xF ? 0xF : value;
+    fpioa_drv_reg_set(self->pin, reg_cfg.u.value);
+}
+
+int machine_pin_drive_get(mp_obj_t self_in) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    struct st_iomux_reg reg_cfg;
+
+    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
+
+    return reg_cfg.u.bit.ds;
+}
+
 STATIC void machine_pin_init_helper(machine_pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_mode, ARG_pull, ARG_value, ARG_drive };
     static const mp_arg_t allowed_args[] = {
@@ -124,113 +209,13 @@ STATIC void machine_pin_init_helper(machine_pin_obj_t *self, size_t n_args, cons
     self->mode = mode;
 }
 
-STATIC void machine_pin_value_set(machine_pin_obj_t *self, int value) {
-    gpio_config_t gpio_cfg = { .pin = self->pin };
-
-    if (ioctl(gpio_fd, value > 0 ? GPIO_WRITE_HIGH : GPIO_WRITE_LOW, &gpio_cfg)) {
-        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("gpio set output level error"));
-    }
-}
-
-STATIC int machine_pin_value_get(machine_pin_obj_t *self) {
-    gpio_config_t gpio_cfg = { .pin = self->pin };
-
-    if (ioctl(gpio_fd, GPIO_READ_VALUE, &gpio_cfg)) {
-        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("gpio read input level error"));
-    }
-
-    return gpio_cfg.value;
-}
-
-STATIC void machine_pin_mode_set(machine_pin_obj_t *self, int value) {
-    gpio_config_t gpio_cfg = { .pin = self->pin };
-
-    if (ioctl(gpio_fd, value == DIR_OUT ? GPIO_DM_OUTPUT : GPIO_DM_INPUT, &gpio_cfg)) {
-        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("gpio set dir error"));
-    }
-
-    self->mode = value == DIR_OUT ? DIR_OUT : DIR_IN;
-}
-
-STATIC int machine_pin_mode_get(machine_pin_obj_t *self) {
-    return self->mode;
-}
-
-STATIC void machine_pin_pull_set(machine_pin_obj_t *self, int value) {
-    struct st_iomux_reg reg_cfg;
-
-    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
-    value = value < 0 ? 0 : value;
-    reg_cfg.u.bit.pu = (value & PULL_UP) ? 1 : 0;
-    reg_cfg.u.bit.pd = (value & PULL_DOWN) ? 1 : 0;
-    fpioa_drv_reg_set(self->pin, reg_cfg.u.value);
-}
-
-STATIC int machine_pin_pull_get(machine_pin_obj_t *self) {
-    struct st_iomux_reg reg_cfg;
-    int value = 0;
-
-    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
-    value |= (reg_cfg.u.bit.pu ? PULL_UP : 0);
-    value |= (reg_cfg.u.bit.pd ? PULL_DOWN : 0);
-
-    return value;
-}
-
-STATIC void machine_pin_drive_set(machine_pin_obj_t *self, int value) {
-    struct st_iomux_reg reg_cfg;
-
-    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
-    reg_cfg.u.bit.ds = value < 0 ? 0 : value > 0xF ? 0xF : value;
-    fpioa_drv_reg_set(self->pin, reg_cfg.u.value);
-}
-
-STATIC int machine_pin_drive_get(machine_pin_obj_t *self) {
-    struct st_iomux_reg reg_cfg;
-
-    fpioa_drv_reg_get(self->pin, &reg_cfg.u.value);
-
-    return reg_cfg.u.bit.ds;
-}
-
-STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
-    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
-
-    mp_printf(print, "Pin: %d, mode: %d, value: %d, pull: %d, drive: %d",
-        self->pin, machine_pin_mode_get(self), machine_pin_value_get(self),
-        machine_pin_pull_get(self), machine_pin_drive_get(self));
-}
-
-STATIC mp_obj_t machine_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    mp_arg_check_num(n_args, n_kw, 2, 5, true);
-
-    if (gpio_fd < 0) {
-        gpio_fd = open(GPIO_DEVICE_NAME, O_RDWR);
-        if (gpio_fd < 0) {
-            mp_raise_OSError_with_filename(errno, GPIO_DEVICE_NAME);
-        }
-    }
-
-    int pin = mp_obj_get_int(args[0]);
-    if (pin < 0 || pin > MAX_GPIO_NUM) {
-        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("pin number is invalid"));
-    }
-
-    machine_pin_obj_t *self = mp_obj_malloc(machine_pin_obj_t, &machine_pin_type);
-    self->pin = pin;
-    mp_map_t kw_args;
-    mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
-    machine_pin_init_helper(self, n_args - 1, args + 1, &kw_args);
-
-    return MP_OBJ_FROM_PTR(self);
-}
-
+// Pythone Methods ////////////////////////////////////////////////////////////
 STATIC mp_obj_t machine_pin_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     machine_pin_init_helper(args[0], n_args - 1, args + 1, kw_args);
 
     return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_KW(machine_pin_init_obj, 2, machine_pin_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_pin_init_obj, 2, machine_pin_init);
 
 STATIC mp_obj_t machine_pin_value(size_t n_args, const mp_obj_t *args) {
     machine_pin_obj_t *self = MP_OBJ_TO_PTR(args[0]);
@@ -301,6 +286,38 @@ STATIC mp_obj_t machine_pin_drive(size_t n_args, const mp_obj_t *args) {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_drive_obj, 1, 2, machine_pin_drive);
+
+STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    mp_printf(print, "Pin: %d, mode: %d, value: %d, pull: %d, drive: %d",
+        self->pin, machine_pin_mode_get(self), machine_pin_value_get(self),
+        machine_pin_pull_get(self), machine_pin_drive_get(self));
+}
+
+STATIC mp_obj_t machine_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+    mp_arg_check_num(n_args, n_kw, 2, 5, true);
+
+    if (gpio_fd < 0) {
+        gpio_fd = open(GPIO_DEVICE_NAME, O_RDWR);
+        if (gpio_fd < 0) {
+            mp_raise_OSError_with_filename(errno, GPIO_DEVICE_NAME);
+        }
+    }
+
+    int pin = mp_obj_get_int(args[0]);
+    if (pin < 0 || pin > MAX_GPIO_NUM) {
+        mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("pin number is invalid"));
+    }
+
+    machine_pin_obj_t *self = mp_obj_malloc(machine_pin_obj_t, &machine_pin_type);
+    self->pin = pin;
+    mp_map_t kw_args;
+    mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
+    machine_pin_init_helper(self, n_args - 1, args + 1, &kw_args);
+
+    return MP_OBJ_FROM_PTR(self);
+}
 
 STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&machine_pin_init_obj) },

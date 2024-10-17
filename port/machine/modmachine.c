@@ -44,6 +44,7 @@
 #include "machine_fft.h"
 #include "machine_fpioa.h"
 #include "machine_spi.h"
+#include "machine_spi_lcd.h"
 #include "machine_rtc.h"
 #include "machine_touch.h"
 #include "machine_led.h"
@@ -120,10 +121,11 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ADC), MP_ROM_PTR(&machine_adc_type) },
     { MP_ROM_QSTR(MP_QSTR_FFT), MP_ROM_PTR(&machine_fft_type) },
     { MP_ROM_QSTR(MP_QSTR_SPI), MP_ROM_PTR(&machine_spi_type) },
+    { MP_ROM_QSTR(MP_QSTR_SPI_LCD), MP_ROM_PTR(&machine_spi_lcd_type) },
     { MP_ROM_QSTR(MP_QSTR_RTC), MP_ROM_PTR(&machine_rtc_type) },
     { MP_ROM_QSTR(MP_QSTR_TOUCH), MP_ROM_PTR(&machine_touch_type) },
     { MP_ROM_QSTR(MP_QSTR_LED), MP_ROM_PTR(&machine_led_type) },
-    { MP_ROM_QSTR(MP_QSTR_I2C_Slave), MP_ROM_PTR(&machine_i2c_slave_type) }
+    { MP_ROM_QSTR(MP_QSTR_I2C_Slave), MP_ROM_PTR(&machine_i2c_slave_type) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_module_globals, machine_module_globals_table);

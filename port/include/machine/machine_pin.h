@@ -30,4 +30,17 @@
 
 extern const mp_obj_type_t machine_pin_type;
 
+// APIs for internal use
+void machine_pin_value_set(mp_obj_t self_in, int value);
+int machine_pin_value_get(mp_obj_t self_in);
+
+void machine_pin_mode_set(mp_obj_t self_in, int value);
+int machine_pin_mode_get(mp_obj_t self_in);
+
+void machine_pin_pull_set(mp_obj_t self_in, int value);
+int machine_pin_pull_get(mp_obj_t self_in);
+
+void machine_pin_drive_set(mp_obj_t self_in, int value);
+int machine_pin_drive_get(mp_obj_t self_in);
+
 #endif

@@ -23,14 +23,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MICROPY_INCLUDED_EXTMOD_MACHINE_SPI_H
-#define MICROPY_INCLUDED_EXTMOD_MACHINE_SPI_H
+#ifndef MICROPY_INCLUDED_EXTMOD_MACHINE_SPI_LCD_H
+#define MICROPY_INCLUDED_EXTMOD_MACHINE_SPI_LCD_H
 
 #include "py/obj.h"
 
-extern const mp_obj_type_t machine_spi_type;
+extern const mp_obj_type_t machine_spi_lcd_type;
 
-// APIs for internal use
-extern void mp_machine_spi_transfer(mp_obj_t self_in, size_t src_len, const void *src, size_t dest_len, void *dest);
-
-#endif // MICROPY_INCLUDED_EXTMOD_MACHINE_SPI_H
+#endif // MICROPY_INCLUDED_EXTMOD_MACHINE_SPI_LCD_H

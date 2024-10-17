@@ -35,11 +35,6 @@
 #include "sys/ioctl.h"
 #include "py/obj.h"
 
-#define SPI_DEVICE_NAME "/dev/spi"
-#define SPI0_DEVICE_NAME "/dev/spi0"
-#define SPI1_DEVICE_NAME "/dev/spi1"
-#define SPI2_DEVICE_NAME "/dev/spi2"
-
 #define RT_SPI_DEV_CTRL_CONFIG (0xc00 + 0x01)
 #define RT_SPI_DEV_CTRL_RW (0xc00 + 0x02)
 #define RT_SPI_DEV_CTRL_CLK (0xc00 + 0x03)
@@ -56,18 +51,6 @@ struct rt_spi_configuration {
     uint8_t data_width;
     uint16_t reserved;
     uint32_t max_hz;
-};
-
-enum {
-    DWENUM_SPI_TXRX = 0,
-    DWENUM_SPI_TX = 1,
-    DWENUM_SPI_RX = 2,
-    DWENUM_SPI_EEPROM = 3
-};
-
-enum {
-    MP_SPI_IOCTL_INIT,
-    MP_SPI_IOCTL_DEINIT,
 };
 
 typedef struct {
@@ -97,90 +80,6 @@ STATIC void machine_spi_obj_check(machine_spi_obj_t *self) {
     }
 }
 
-STATIC void mp_machine_spi_transfer(mp_obj_t *self_in, size_t src_len, const void *src, size_t dest_len, void *dest) {
-    machine_spi_obj_t *self = (machine_spi_obj_t *)self_in;
-    machine_spi_obj_check(self);
-    struct rt_spi_priv_data *priv_data = mp_local_alloc(sizeof(struct rt_spi_priv_data));
-    priv_data->send_buf = src;
-    priv_data->send_length = src_len;
-    priv_data->recv_buf = dest;
-    priv_data->recv_length = dest_len;
-
-    if (dest == NULL) {
-        struct rt_spi_configuration cfg = {
-            .mode = DWENUM_SPI_TX,
-            .data_width = self->spi.bits,
-            .max_hz = self->spi.baud,
-        };
-        ioctl(self->fd, RT_SPI_DEV_CTRL_CONFIG, &cfg);
-        write(self->fd, src, src_len);
-    } else if ((src == NULL) && (dest != NULL)) {
-        struct rt_spi_configuration cfg = {
-            .mode = DWENUM_SPI_RX,
-            .data_width = self->spi.bits,
-            .max_hz = self->spi.baud,
-        };
-        ioctl(self->fd, RT_SPI_DEV_CTRL_CONFIG, &cfg);
-        read(self->fd, dest, dest_len);
-    } else {
-        struct rt_spi_configuration cfg = {
-            .mode = DWENUM_SPI_EEPROM,
-            .data_width = self->spi.bits,
-            .max_hz = self->spi.baud,
-        };
-        ioctl(self->fd, RT_SPI_DEV_CTRL_CONFIG, &cfg);
-        ioctl(self->fd, RT_SPI_DEV_CTRL_RW, priv_data);
-    }
-
-    mp_local_free(priv_data);
-}
-
-STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *args) {
-    vstr_t vstr;
-    vstr_init_len(&vstr, mp_obj_get_int(args[1]));
-    memset(vstr.buf, n_args == 3 ? mp_obj_get_int(args[2]) : 0, vstr.len);
-    mp_machine_spi_transfer(args[0], 0, NULL, vstr.len, vstr.buf);
-    return mp_obj_new_bytes_from_vstr(&vstr);
-}
-MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_machine_spi_read_obj, 2, 3, mp_machine_spi_read);
-
-STATIC mp_obj_t mp_machine_spi_readinto(size_t n_args, const mp_obj_t *args) {
-    mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_WRITE);
-    memset(bufinfo.buf, n_args == 3 ? mp_obj_get_int(args[2]) : 0, bufinfo.len);
-    mp_machine_spi_transfer(args[0], 0, NULL, bufinfo.len, bufinfo.buf);
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_machine_spi_readinto_obj, 2, 3, mp_machine_spi_readinto);
-
-STATIC mp_obj_t mp_machine_spi_write(mp_obj_t self, mp_obj_t wr_buf) {
-    mp_buffer_info_t src;
-    mp_get_buffer_raise(wr_buf, &src, MP_BUFFER_READ);
-    mp_machine_spi_transfer(self, src.len, (const uint8_t *)src.buf, 0, NULL);
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_2(mp_machine_spi_write_obj, mp_machine_spi_write);
-
-STATIC mp_obj_t mp_machine_spi_write_readinto(mp_obj_t self, mp_obj_t wr_buf, mp_obj_t rd_buf) {
-    mp_buffer_info_t src;
-    mp_get_buffer_raise(wr_buf, &src, MP_BUFFER_READ);
-    mp_buffer_info_t dest;
-    mp_get_buffer_raise(rd_buf, &dest, MP_BUFFER_WRITE);
-    // if (src.len != dest.len) {
-    //     mp_raise_ValueError(MP_ERROR_TEXT("buffers must be the same length"));
-    // }
-    mp_machine_spi_transfer(self, src.len, src.buf, dest.len, dest.buf);
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_3(mp_machine_spi_write_readinto_obj, mp_machine_spi_write_readinto);
-
-STATIC void machine_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
-    machine_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    machine_spi_obj_check(self);
-    mp_printf(print, "SPI %u: baudrate=%u, polarity=%u, phase=%u, bits=%u",
-        self->index, self->spi.baud, self->spi.polarity, self->spi.phase, self->spi.bits);
-}
-
 STATIC void machine_spi_init_helper(machine_spi_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_baudrate, ARG_polarity, ARG_phase, ARG_bits };
     static const mp_arg_t allowed_args[] = {
@@ -200,6 +99,114 @@ STATIC void machine_spi_init_helper(machine_spi_obj_t *self, size_t n_args, cons
     if (self->spi.bits != 8) {
         mp_raise_ValueError(MP_ERROR_TEXT("invalid spi bits"));
     }
+}
+
+void mp_machine_spi_transfer(mp_obj_t self_in, size_t src_len, const void *src, size_t dest_len, void *dest) {
+    machine_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    machine_spi_obj_check(self);
+
+    struct rt_spi_priv_data *priv_data = mp_local_alloc(sizeof(struct rt_spi_priv_data));
+    priv_data->send_buf = src;
+    priv_data->send_length = src_len;
+    priv_data->recv_buf = dest;
+    priv_data->recv_length = dest_len;
+
+    uint8_t mode = (self->spi.polarity << 1) | (self->spi.phase << 0);
+
+    if (dest == NULL) {
+        struct rt_spi_configuration cfg = {
+            .mode = mode,
+            .data_width = self->spi.bits,
+            .max_hz = self->spi.baud,
+        };
+        ioctl(self->fd, RT_SPI_DEV_CTRL_CONFIG, &cfg);
+        write(self->fd, src, src_len);
+    } else if ((src == NULL) && (dest != NULL)) {
+        struct rt_spi_configuration cfg = {
+            .mode = mode,
+            .data_width = self->spi.bits,
+            .max_hz = self->spi.baud,
+        };
+        ioctl(self->fd, RT_SPI_DEV_CTRL_CONFIG, &cfg);
+        read(self->fd, dest, dest_len);
+    } else {
+        struct rt_spi_configuration cfg = {
+            .mode = mode,
+            .data_width = self->spi.bits,
+            .max_hz = self->spi.baud,
+        };
+        ioctl(self->fd, RT_SPI_DEV_CTRL_CONFIG, &cfg);
+        ioctl(self->fd, RT_SPI_DEV_CTRL_RW, priv_data);
+    }
+
+    mp_local_free(priv_data);
+}
+
+STATIC mp_obj_t mp_machine_spi_read(size_t n_args, const mp_obj_t *args) {
+    vstr_t vstr;
+    vstr_init_len(&vstr, mp_obj_get_int(args[1]));
+    memset(vstr.buf, n_args == 3 ? mp_obj_get_int(args[2]) : 0, vstr.len);
+    mp_machine_spi_transfer(args[0], 0, NULL, vstr.len, vstr.buf);
+    return mp_obj_new_bytes_from_vstr(&vstr);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_machine_spi_read_obj, 2, 3, mp_machine_spi_read);
+
+STATIC mp_obj_t mp_machine_spi_readinto(size_t n_args, const mp_obj_t *args) {
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_WRITE);
+    memset(bufinfo.buf, n_args == 3 ? mp_obj_get_int(args[2]) : 0, bufinfo.len);
+    mp_machine_spi_transfer(args[0], 0, NULL, bufinfo.len, bufinfo.buf);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_machine_spi_readinto_obj, 2, 3, mp_machine_spi_readinto);
+
+STATIC mp_obj_t mp_machine_spi_write(mp_obj_t self, mp_obj_t wr_buf) {
+    mp_buffer_info_t src;
+    mp_get_buffer_raise(wr_buf, &src, MP_BUFFER_READ);
+    mp_machine_spi_transfer(self, src.len, (const uint8_t *)src.buf, 0, NULL);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mp_machine_spi_write_obj, mp_machine_spi_write);
+
+STATIC mp_obj_t mp_machine_spi_write_readinto(mp_obj_t self, mp_obj_t wr_buf, mp_obj_t rd_buf) {
+    mp_buffer_info_t src;
+    mp_get_buffer_raise(wr_buf, &src, MP_BUFFER_READ);
+    mp_buffer_info_t dest;
+    mp_get_buffer_raise(rd_buf, &dest, MP_BUFFER_WRITE);
+    // if (src.len != dest.len) {
+    //     mp_raise_ValueError(MP_ERROR_TEXT("buffers must be the same length"));
+    // }
+    mp_machine_spi_transfer(self, src.len, src.buf, dest.len, dest.buf);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(mp_machine_spi_write_readinto_obj, mp_machine_spi_write_readinto);
+
+STATIC mp_obj_t machine_spi_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+    machine_spi_obj_check(args[0]);
+    machine_spi_init_helper(args[0], n_args - 1, args + 1, kw_args);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_spi_init_obj, 1, machine_spi_init);
+
+STATIC mp_obj_t machine_spi_deinit(mp_obj_t self_in) {
+    machine_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->status == 0)
+        return mp_const_none;
+    close(self->fd);
+    if (self->status == 2)
+        spi_used[self->index] = 0;
+    self->status = 0;
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_spi_deinit_obj, machine_spi_deinit);
+
+STATIC void machine_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+    machine_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    machine_spi_obj_check(self);
+    mp_printf(print, "SPI %u: baudrate=%u, polarity=%u, phase=%u, bits=%u",
+        self->index, self->spi.baud, self->spi.polarity, self->spi.phase, self->spi.bits);
 }
 
 STATIC mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -234,26 +241,6 @@ STATIC mp_obj_t machine_spi_make_new(const mp_obj_type_t *type, size_t n_args, s
 
     return MP_OBJ_FROM_PTR(self);
 }
-
-STATIC mp_obj_t machine_spi_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
-    machine_spi_obj_check(args[0]);
-    machine_spi_init_helper(args[0], n_args - 1, args + 1, kw_args);
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(machine_spi_init_obj, 1, machine_spi_init);
-
-STATIC mp_obj_t machine_spi_deinit(mp_obj_t self_in) {
-    machine_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if (self->status == 0)
-        return mp_const_none;
-    close(self->fd);
-    if (self->status == 2)
-        spi_used[self->index] = 0;
-    self->status = 0;
-
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_spi_deinit_obj, machine_spi_deinit);
 
 STATIC const mp_rom_map_elem_t machine_spi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&machine_spi_deinit_obj) },
