@@ -110,7 +110,7 @@ static inline void rotate_touch_point(machine_touch_obj_t *self, struct rt_touch
 STATIC void machine_touch_info_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_touch_info_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "track_id: %d, event: %d, width: %d, x: %d, y: %d, timestamp: %d",
-        self->info.event, self->info.track_id, self->info.width, self->info.x_coordinate,
+        self->info.track_id, self->info.event, self->info.width, self->info.x_coordinate,
         self->info.y_coordinate, self->info.timestamp);
 }
 
@@ -176,7 +176,7 @@ STATIC mp_obj_t machine_touch_make_new(const mp_obj_type_t *type, size_t n_args,
     enum { ARG_dev, ARG_rotation };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_dev, MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_rotation, MP_ARG_INT, {.u_int = TOUCH_ROTATE_DEGREE_270} },
+        { MP_QSTR_rotation, MP_ARG_OBJ, {.u_obj = mp_const_none} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -193,11 +193,25 @@ STATIC mp_obj_t machine_touch_make_new(const mp_obj_type_t *type, size_t n_args,
         mp_raise_OSError_with_filename(errno, dev_name);
     }
 
-#define RT_TOUCH_CTRL_GET_INFO (21 * 0x100 + 1)
+#define RT_TOUCH_CTRL_GET_INFO          (21 * 0x100 + 1)
+#define RT_TOUCH_CTRL_RESET             (21 * 0x100 + 11)
+#define RT_TOUCH_CTRL_GET_DFT_ROTATE    (21 * 0x100 + 12)
     struct rt_touch_info info;
+
+    ioctl(fd, RT_TOUCH_CTRL_RESET, NULL);
+    mp_hal_delay_ms(5);
 
     if(0x00 != ioctl(fd, RT_TOUCH_CTRL_GET_INFO, &info)) {
         mp_raise_OSError_with_filename(errno, dev_name);
+    }
+
+    int default_rotate;
+    if(0x00 != ioctl(fd, RT_TOUCH_CTRL_GET_DFT_ROTATE, &default_rotate)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("touch ioctl error"));
+    }
+
+    if (args[ARG_rotation].u_obj != mp_const_none) {
+        default_rotate = mp_obj_get_int(args[ARG_rotation].u_obj);
     }
 
     machine_touch_obj_t *self = m_new_obj_with_finaliser(machine_touch_obj_t);
@@ -207,7 +221,7 @@ STATIC mp_obj_t machine_touch_make_new(const mp_obj_type_t *type, size_t n_args,
     self->valid = true;
     self->range_x = info.range_x;
     self->range_y = info.range_y;
-    self->rotate = (args[ARG_rotation].u_int) & 0x03;
+    self->rotate = default_rotate & 0x03;
 
     return MP_OBJ_FROM_PTR(self);
 }
