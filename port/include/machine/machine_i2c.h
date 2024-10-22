@@ -30,4 +30,6 @@
 
 extern const mp_obj_type_t machine_i2c_type;
 
+int machine_i2c_obj_get_fd(mp_obj_t self_in);
+
 #endif // MICROPY_INCLUDED_EXTMOD_MACHINE_I2C_H

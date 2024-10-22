@@ -29,5 +29,6 @@
 #include "py/obj.h"
 
 extern const mp_obj_type_t machine_touch_type;
+extern const mp_obj_type_t machine_touch_user_type;
 
 #endif

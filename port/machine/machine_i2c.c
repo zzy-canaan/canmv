@@ -108,6 +108,13 @@ STATIC void machine_i2c_obj_check(machine_i2c_obj_t *self) {
     }
 }
 
+int machine_i2c_obj_get_fd(mp_obj_t self_in) {
+    machine_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    machine_i2c_obj_check(self);
+
+    return self->fd;
+}
+
 // return value:
 //  >=0 - success; for read it's 0, for write it's number of acks received
 //   <0 - error, with errno being the negative of the return value
