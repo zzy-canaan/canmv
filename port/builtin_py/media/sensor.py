@@ -67,6 +67,7 @@ class Sensor:
     FRAME_SIZE_INVAILD = const(31)
 
     _devs = [None for i in range(0, CAM_DEV_ID_MAX)]
+    _csis = [False for i in range(0, CAM_DEV_ID_MAX)]
 
     @classmethod
     def deinit(cls):
@@ -133,6 +134,21 @@ class Sensor:
 
                 sensor._is_started = True
 
+    @classmethod
+    def _get_dev_id(self):
+        dev_id = 0
+        all_used = True
+        for i in range(0, CAM_DEV_ID_MAX):
+            if Sensor._csis[i]:
+                dev_id = dev_id + 1
+            else:
+                all_used = False
+
+        if all_used is True:
+            return None
+
+        return dev_id
+
     # id
     # type
     # force
@@ -143,13 +159,13 @@ class Sensor:
         def_mirror = 0
         dft_sensor_id = get_default_sensor()
 
-        self._dev_id = kwargs.get('id', dft_sensor_id)
-        if (self._dev_id > CAM_DEV_ID_MAX - 1):
-            raise AssertionError(f"invaild sensor id {self._dev_id}, should < {CAM_DEV_ID_MAX - 1}")
+        self._csi_bus = kwargs.get('id', dft_sensor_id)
+        if (self._csi_bus > CAM_DEV_ID_MAX - 1):
+            raise AssertionError(f"invaild sensor id {self._csi_bus}, should < {CAM_DEV_ID_MAX - 1}")
 
         force = kwargs.get('force', False)
-        if not force and Sensor._devs[self._dev_id] is not None:
-            raise OSError(f"sensor({self._dev_id}) is already inited.")
+        if not force and Sensor._csis[self._csi_bus]:
+            raise OSError(f"sensor({self._csi_bus}) is already inited.")
 
         arg_type = kwargs.get('type', None)
         if arg_type is not None:
@@ -157,14 +173,14 @@ class Sensor:
         else:
             info = k_vicap_sensor_info()
             cfg = k_vicap_probe_config()
-            cfg.csi = self._dev_id + 1 # convert to csi num
+            cfg.csi = self._csi_bus + 1 # convert to csi num
             cfg.fps = kwargs.get('fps', 60)
             cfg.width = kwargs.get('width', 1920)
             cfg.height = kwargs.get('height', 1080)
 
             ret = kd_mpi_sensor_adapt_get(cfg, info)
             if 0 != ret:
-                raise RuntimeError(f"Can not found sensor on {self._dev_id}")
+                raise RuntimeError(f"Can not found sensor on {self._csi_bus}")
 
             def_mirror = cfg.def_mirror
             self._type = info.type
@@ -172,6 +188,10 @@ class Sensor:
 
         if (self._type > SENSOR_TYPE_MAX - 1):
             raise AssertionError(f"invaild sensor type {self._type}, should < {SENSOR_TYPE_MAX - 1}")
+
+        self._dev_id = self._get_dev_id()
+        if self._dev_id is None:
+            raise AssertionError(f"too many csi devs")
 
         self._dev_attr = k_vicap_dev_attr()
         self._chn_attr = [k_vicap_chn_attr() for i in range(0, VICAP_CHN_ID_MAX)]
@@ -195,6 +215,7 @@ class Sensor:
 
         self._framesize = [Sensor.FRAME_SIZE_INVAILD for i in range(0, VICAP_CHN_ID_MAX)]
 
+        Sensor._csis[self._csi_bus] = True
         Sensor._devs[self._dev_id] = self
 
     def __del__(self):
@@ -886,6 +907,7 @@ class Sensor:
         self._release_all_chn_image()
         self._is_started = False
 
+        Sensor._csis[self._csi_bus] = False
         Sensor._devs[self._dev_id] = None
 
     def bind_info(self, x = 0, y = 0, chn = CAM_CHN_ID_0):
