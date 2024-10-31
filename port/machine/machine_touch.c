@@ -207,14 +207,12 @@ STATIC void machine_touch_system_init(machine_touch_obj_t *self, mp_int_t dev, m
         mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("touch ioctl(get_rotate) error"));
     }
 
-    if(-1 != self->rotate) {
-        rotate = self->rotate;
-    }
-
     self->base.type = &machine_touch_type;
     self->dev = 0;
 
-    self->rotate = rotate & 0x03;
+    if(-1 == self->rotate) {
+        self->rotate = rotate;
+    }
     self->range_x = info.range_x;
     self->range_y = info.range_y;
 
@@ -409,8 +407,6 @@ STATIC void machine_touch_user_init(machine_touch_obj_t *self, mp_int_t dev, mp_
         } else {
             mp_raise_TypeError(MP_ERROR_TEXT("Unsupport type"));
         }
-    } else {
-        self->rotate &= 0x03;
     }
 
     if(mp_const_none != self->user.py_obj.pin_rst) {
