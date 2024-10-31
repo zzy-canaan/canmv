@@ -14,6 +14,7 @@ LT9611_MIPI_4LAN_1280X720_50FPS = const(111)
 LT9611_MIPI_4LAN_1280X720_30FPS = const(112)
 LT9611_MIPI_4LAN_640X480_60FPS = const(120)
 VIRTUAL_DISPLAY_DEVICE = const(200)
+DSI_DEBUGGER_DEVICE = const(201)
 
 def k_connectori_phy_attr(**kwargs):
     layout = uctypes.NATIVE

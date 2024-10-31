@@ -58,9 +58,10 @@ class Display:
         def __del__(self):
             self.linker.__del__()
 
-    VIRT = const(300)
-    LT9611 = const(301)
-    HX8377 = const(302)
+    DEBUGGER = const(300)
+    VIRT = const(301)
+    LT9611 = const(302)
+    HX8377 = const(303)
 
     # ST7701s
     ST7701 = const(400)
@@ -203,7 +204,7 @@ class Display:
 
         cls._ide_vo_wbc_flag = 0
 
-        if _type >= Display.VIRT:
+        if _type >= Display.DEBUGGER:
             if _type == Display.LT9611:
                 _width = width if width is not None else 1920
                 _height = height if height is not None else 1080
@@ -260,13 +261,17 @@ class Display:
             elif _type == Display.VIRT:
                 cls._write_back_to_ide = True
                 cls._connector_type = VIRTUAL_DISPLAY_DEVICE
+            elif _type == Display.DEBUGGER:
+                cls._connector_type = DSI_DEBUGGER_DEVICE
             else:
                 raise AssertionError(f"Unsupport display type {_type}")
         else:
             cls._connector_type = _type
 
         cls._connector_info = k_connector_info()
-        kd_mpi_get_connector_info(cls._connector_type, cls._connector_info)
+        ret = kd_mpi_get_connector_info(cls._connector_type, cls._connector_info)
+        if ret != 0:
+            raise RuntimeError("Get display device info failed.")
         if cls._connector_type == VIRTUAL_DISPLAY_DEVICE:
             _width = width if width is not None else 640
             _height = height if height is not None else 480
@@ -279,7 +284,13 @@ class Display:
         cls._width = cls._connector_info.resolution.hdisplay
         cls._height = cls._connector_info.resolution.vdisplay
 
+        if 0 == cls._width or 0 == cls._height:
+            raise RuntimeError(f"Can't open display device or invalid configure for virt display")
+
         connector_fd = kd_mpi_connector_open(uctypes.string_at(cls._connector_info.connector_name))
+        if 0 > connector_fd:
+            raise RuntimeError(f"Can't open display device")
+
         kd_mpi_connector_power_set(connector_fd, 1)
         kd_mpi_connector_init(connector_fd, cls._connector_info)
         kd_mpi_connector_close(connector_fd)
