@@ -149,11 +149,18 @@ STATIC mp_obj_t mp_machine_pwm_make_new(const mp_obj_type_t *type, size_t n_args
 }
 
 STATIC void mp_machine_pwm_deinit(machine_pwm_obj_t *self) {
+    pwm_config_t config;
+
     if (self->valid == 0)
         return;
 
     self->valid = 0;
     k230_pwm_obj.used[self->channel] = 0;
+
+    config.channel = self->channel;
+    if (ioctl(k230_pwm_obj.fd, KD_PWM_CMD_DISABLE, &config)) {
+        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("PWM channel %u disable failed"), self->channel);
+    }
 
     if (k230_pwm_obj.refcnt)
         k230_pwm_obj.refcnt--;
@@ -195,7 +202,7 @@ STATIC mp_obj_t mp_machine_pwm_duty_get(machine_pwm_obj_t *self) {
     if (ioctl(k230_pwm_obj.fd, KD_PWM_CMD_GET, &config))
         mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("PWM channel %u get config error"), self->channel);
 
-    return mp_obj_new_float_from_d((double)config.pulse * 100 / (double)config.period);
+    return mp_obj_new_float_from_d((double)100.0f - ((double)config.pulse * 100 / (double)config.period));
 }
 
 STATIC void mp_machine_pwm_duty_set(machine_pwm_obj_t *self, mp_float_t duty) {
