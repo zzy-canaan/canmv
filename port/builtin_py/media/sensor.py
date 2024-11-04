@@ -290,6 +290,11 @@ class Sensor:
         self._dev_attr.dw_enable = 0
         self._dev_attr.cpature_frame = 0
 
+        sensor_name = uctypes.string_at(self._dev_attr.sensor_info.name)
+
+        if sensor_name.startswith("sc132gs_csi"):
+            self._dev_attr.pipe_ctrl.bits.dnr3_enable = 1 # disable 3dnr
+
         Sensor._handle_mcm_device()
 
     @wrap
