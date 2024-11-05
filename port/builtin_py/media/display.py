@@ -431,6 +431,14 @@ class Display:
                 return 0
 
     @classmethod
+    def fps(cls, layer = None):
+        htotal = cls._connector_info.resolution.htotal
+        vtotal = cls._connector_info.resolution.vtotal
+        pclk = cls._connector_info.resolution.pclk
+
+        return pclk * 1000 // htotal // vtotal
+
+    @classmethod
     def _disable_layer(cls, layer):
         if layer > K_VO_MAX_CHN_NUMS:
             raise IndexError(f"layer({layer}) out of range")
@@ -476,7 +484,7 @@ class Display:
 
         if cls._connector_is_st7701:
             if layer_config.flag == 0:
-                layer_config.flag = cls._connector_type
+                layer_config.flag = cls._ide_vo_wbc_flag
 
         if layer_config.flag & Display.FLAG_ROTATION_90 == Display.FLAG_ROTATION_90 or layer_config.flag & Display.FLAG_ROTATION_270 == Display.FLAG_ROTATION_270:
             if layer_config.layer == Display.LAYER_VIDEO2:

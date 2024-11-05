@@ -31,7 +31,7 @@ class ScopedTiming:
 
 # PipeLine类
 class PipeLine:
-    def __init__(self,rgb888p_size=[224,224],display_size=[1920,1080],display_mode="lcd",debug_mode=0):
+    def __init__(self,rgb888p_size=[224,224],display_size=[1920,1080],display_mode="lcd",debug_mode=0,osd_layer_num=1):
         # sensor给AI的图像分辨率
         self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
         # 视频输出VO图像分辨率
@@ -43,6 +43,7 @@ class PipeLine:
         # osd显示Image对象
         self.osd_img=None
         self.debug_mode=debug_mode
+        self.osd_layer_num = osd_layer_num
 
     # PipeLine初始化函数
     def create(self,sensor=None,hmirror=None,vflip=None,fps=60):
@@ -81,10 +82,14 @@ class PipeLine:
             # 初始化显示
             if self.display_mode=="hdmi":
                 # 设置为LT9611显示，默认1920x1080
-                Display.init(Display.LT9611, to_ide = True)
+                Display.init(Display.LT9611,osd_num=self.osd_layer_num, to_ide = True)
             else:
                 # 设置为ST7701显示，默认480x800
-                Display.init(Display.ST7701, to_ide = True)
+                Display.init(Display.ST7701, width=self.display_size[0], height=self.display_size[1], osd_num=self.osd_layer_num, to_ide=True)
+
+            # 设置bind通道的帧率，防止生产者太快
+            display_fps = Display.fps()
+            self.sensor._set_chn_fps(chn = CAM_CHN_ID_0, fps = display_fps)
 
             # media初始化
             MediaManager.init()

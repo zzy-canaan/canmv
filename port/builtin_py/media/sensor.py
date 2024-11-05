@@ -915,6 +915,13 @@ class Sensor:
         Sensor._csis[self._csi_bus] = False
         Sensor._devs[self._dev_id] = None
 
+    def _set_chn_fps(self, chn = CAM_CHN_ID_0, fps = 30):
+        if (chn > CAM_CHN_ID_MAX - 1):
+            raise AssertionError(f"invaild chn id {chn}, should < {CAM_CHN_ID_MAX - 1}")
+
+        if abs(self._dev_attr.sensor_info.fps - fps) > 5:
+            self._chn_attr[chn].fps = fps
+
     def bind_info(self, x = 0, y = 0, chn = CAM_CHN_ID_0):
         if not self._dev_attr.dev_enable:
             raise AssertionError("should call reset() first")
