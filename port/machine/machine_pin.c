@@ -161,6 +161,12 @@ int machine_pin_drive_get(mp_obj_t self_in) {
     return reg_cfg.u.bit.ds;
 }
 
+int machine_pin_get_pin_numer(mp_obj_t self_in) {
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    return self->pin;
+}
+
 STATIC void machine_pin_init_helper(machine_pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_mode, ARG_pull, ARG_value, ARG_drive };
     static const mp_arg_t allowed_args[] = {

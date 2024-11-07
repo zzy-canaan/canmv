@@ -43,4 +43,6 @@ int machine_pin_pull_get(mp_obj_t self_in);
 void machine_pin_drive_set(mp_obj_t self_in, int value);
 int machine_pin_drive_get(mp_obj_t self_in);
 
+int machine_pin_get_pin_numer(mp_obj_t self_in);
+
 #endif

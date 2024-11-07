@@ -28,17 +28,21 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include "sys/ioctl.h"
+
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "py/runtime.h"
-#include "machine_i2c.h"
 #include "py/obj.h"
 
-#define I2C_CHANNEL_MAX 5
+#include "machine_pin.h"
+#include "machine_i2c.h"
+
+#define I2C_CHANNEL_MAX 10
 
 #define RT_I2C_DEV_CTRL_10BIT (0x800 + 0x01)
 #define RT_I2C_DEV_CTRL_ADDR (0x800 + 0x02)
@@ -90,16 +94,28 @@ typedef struct {
 typedef struct {
     mp_obj_base_t base;
     int fd;
-    uint32_t freq;
     uint8_t index;
+    uint32_t freq;
     uint8_t status;
+    uint32_t timeout;
+
+    uint8_t soft_i2c;
+    mp_obj_t pin_scl;
+    mp_obj_t pin_sda;
 } machine_i2c_obj_t;
 
 static bool i2c_used[I2C_CHANNEL_MAX];
 
-STATIC void mp_hal_i2c_init(machine_i2c_obj_t *self, uint32_t freq) {
-    ioctl(self->fd, RT_I2C_DEV_CTRL_CLK, &freq);
-    ioctl(self->fd, RT_I2C_DEV_CTRL_7BIT, NULL);
+STATIC void mp_hal_i2c_init(machine_i2c_obj_t *self) {
+    uint32_t freq = self->freq;
+
+    if(0x00 != ioctl(self->fd, RT_I2C_DEV_CTRL_CLK, &freq)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("set i2c device freq failed"));
+    }
+
+    if(0x00 != ioctl(self->fd, RT_I2C_DEV_CTRL_7BIT, NULL)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("set i2c device attr failed"));
+    }
 }
 
 STATIC void machine_i2c_obj_check(machine_i2c_obj_t *self) {
@@ -113,6 +129,25 @@ int machine_i2c_obj_get_fd(mp_obj_t self_in) {
     machine_i2c_obj_check(self);
 
     return self->fd;
+}
+
+STATIC int machine_i2c_soft_i2c_get_pin_num(mp_obj_t pin_obj) {
+    int pin;
+
+    if(MP_OBJ_NULL == pin_obj) {
+        return -1;
+    }
+
+    if (mp_obj_is_type(pin_obj, &machine_pin_type)) {
+        pin = machine_pin_get_pin_numer(pin_obj);
+    } else {
+        pin = mp_obj_get_int(pin_obj);
+    }
+    if((0 > pin) || (63 < pin)) {
+        mp_raise_ValueError(MP_ERROR_TEXT("invalid Pin"));
+    }
+
+    return pin;
 }
 
 // return value:
@@ -462,70 +497,150 @@ STATIC void machine_i2c_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
     mp_printf(print, "IIC %u: freq=%u", self->index, self->freq);
 }
 
-STATIC void machine_i2c_init_helper(machine_i2c_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_freq };
+STATIC void machine_i2c_arg_parse(machine_i2c_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    enum { ARG_freq, ARG_timeout, ARG_scl, ARG_sda };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_freq, MP_ARG_INT, { .u_int = 400000 } },
+        { MP_QSTR_timeout, MP_ARG_INT, { .u_int = 1000 } }, // 1000 ms
+        { MP_QSTR_scl, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_sda, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     self->freq = args[ARG_freq].u_int;
-    if (self->freq < 100 || self->freq > 10000000) {
+    if ((100 > self->freq) || (10000000 < self->freq)) {
         mp_raise_ValueError(MP_ERROR_TEXT("invalid freq"));
     }
 
-    mp_hal_i2c_init(self, args[ARG_freq].u_int);
+    self->timeout = args[ARG_timeout].u_int;
+
+    if(self->soft_i2c && ((MP_OBJ_NULL == args[ARG_scl].u_obj) || (MP_OBJ_NULL == args[ARG_sda].u_obj))) {
+        mp_raise_ValueError(MP_ERROR_TEXT("soft i2c required scl and sda"));
+    }
+
+    self->pin_scl = args[ARG_scl].u_obj;
+    self->pin_sda = args[ARG_sda].u_obj;
 }
 
 STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    mp_arg_check_num(n_args, n_kw, 1, 2, true);
-
-    int index = mp_obj_get_int(args[0]);
-    if (index < 0 || index >= I2C_CHANNEL_MAX) {
-        mp_raise_ValueError(MP_ERROR_TEXT("invalid i2c number"));
-    }
-    if (i2c_used[index]) {
-        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("I2C %u busy"), index);
-    }
-
-    char dev_name[16] = "/dev/i2c0";
-    dev_name[8] = '0' + index;
-    int fd = open(dev_name, O_RDWR);
-    if (fd < 0) {
-        mp_raise_OSError_with_filename(errno, dev_name);
-    }
-
-    machine_i2c_obj_t *self = m_new_obj_with_finaliser(machine_i2c_obj_t);
-    self->base.type = &machine_i2c_type;
-    self->index = index;
-    self->fd = fd;
-    self->status = 1;
+    int dev_index, dev_fd;
+    char dev_name[16];
 
     mp_map_t kw_args;
+    machine_i2c_obj_t *self = NULL;
+
+    mp_arg_check_num(n_args, n_kw, 1, 4, true);
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
-    machine_i2c_init_helper(self, n_args - 1, args + 1, &kw_args);
-    self->status = 2;
-    i2c_used[index] = 1;
+
+    dev_index = mp_obj_get_int(args[0]);
+
+    self = m_new_obj_with_finaliser(machine_i2c_obj_t);
+    self->base.type = &machine_i2c_type;
+    self->fd = -1;
+    self->index = dev_index;
+    self->status = 0;
+
+    if(4 >= dev_index) {
+        /* Hardware I2C */
+        if(i2c_used[dev_index]) {
+            mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("I2C %u busy"), dev_index);
+        }
+        self->soft_i2c = 0;
+    } else if((I2C_CHANNEL_MAX - 1) >= dev_index) {
+        /* Software I2C */
+        self->soft_i2c = 1;
+    } else {
+        mp_raise_ValueError(MP_ERROR_TEXT("invalid i2c number"));
+    }
+
+    machine_i2c_arg_parse(self, n_args - 1, args + 1, &kw_args);
+
+    if(self->soft_i2c) {
+#define MISC_DEV_CMD_CREATE_SOFT_I2C    (0x1024 + 7)
+        struct soft_i2c_configure {
+            uint32_t bus_num;
+            uint32_t pin_scl;
+            uint32_t pin_sda;
+            uint32_t freq;
+            uint32_t timeout_ms;
+        } cfg;
+
+        int misc_fd = open("/dev/canmv_misc", O_RDWR);
+
+        if(0 > misc_fd) {
+            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("can't open misc device"));
+        }
+
+        cfg.bus_num = dev_index;
+        cfg.pin_scl = machine_i2c_soft_i2c_get_pin_num(self->pin_scl);
+        cfg.pin_sda = machine_i2c_soft_i2c_get_pin_num(self->pin_sda);
+        cfg.freq = self->freq;
+        cfg.timeout_ms = self->timeout;
+
+        if(0x00 != ioctl(misc_fd, MISC_DEV_CMD_CREATE_SOFT_I2C, &cfg)) {
+            close(misc_fd);
+
+            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("can't create soft i2c device"));
+        }
+        close(misc_fd);
+    }
+
+    snprintf(dev_name, sizeof(dev_name), "/dev/i2c%d", dev_index);
+    if(0 > (dev_fd = open(dev_name, O_RDWR))) {
+        mp_raise_OSError_with_filename(errno, dev_name);
+    }
+    self->fd = dev_fd;
+
+    mp_hal_i2c_init(self);
+
+    self->status = 1;
+    i2c_used[dev_index] = 1;
 
     return MP_OBJ_FROM_PTR(self);
 }
 
 STATIC mp_obj_t machine_i2c_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     machine_i2c_obj_check(args[0]);
-    machine_i2c_init_helper(args[0], n_args - 1, args + 1, kw_args);
+
+    machine_i2c_arg_parse(args[0], n_args - 1, args + 1, kw_args);
+
+    mp_hal_i2c_init(args[0]);
+
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(machine_i2c_init_obj, 1, machine_i2c_init);
 
 STATIC mp_obj_t machine_i2c_deinit(mp_obj_t self_in) {
     machine_i2c_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if (self->status == 0)
+
+    if (0x00 == self->status) {
         return mp_const_none;
-    close(self->fd);
-    if (self->status == 2)
-        i2c_used[self->index] = 0;
+    }
+
+    if(0 < self->fd) {
+        close(self->fd);
+    }
+
     self->status = 0;
+    i2c_used[self->index] = 0;
+
+    if(self->soft_i2c) {
+#define MISC_DEV_CMD_DELETE_SOFT_I2C    (0x1024 + 8)
+        int misc_fd = open("/dev/canmv_misc", O_RDWR);
+        uint32_t bus_num = self->index;
+
+        if(0 > misc_fd) {
+            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("can't open misc device"));
+        }
+
+        if(0x00 != ioctl(misc_fd, MISC_DEV_CMD_DELETE_SOFT_I2C, &bus_num)) {
+            close(misc_fd);
+
+            mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("can't delete soft i2c device"));
+        }
+        close(misc_fd);
+    }
 
     return mp_const_none;
 }
