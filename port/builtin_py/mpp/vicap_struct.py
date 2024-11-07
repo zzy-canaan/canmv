@@ -207,3 +207,10 @@ def k_vicap_probe_config(**kwargs):
     s = uctypes.struct(uctypes.addressof(buf), vicap_def.k_vicap_probe_config_desc, layout)
     vicap_def.k_vicap_probe_config_parse(s, kwargs)
     return s
+
+def k_sensor_gain(**kwargs):
+    layout = uctypes.NATIVE
+    buf = bytearray(uctypes.sizeof(vicap_def.k_sensor_gain_desc, layout))
+    s = uctypes.struct(uctypes.addressof(buf), vicap_def.k_sensor_gain_desc, layout)
+    vicap_def.k_sensor_gain_parse(s, kwargs)
+    return s

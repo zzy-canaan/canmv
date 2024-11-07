@@ -122,6 +122,12 @@ class Sensor:
                 if ret:
                     raise RuntimeError(f"sensor({i}) run error, vicap init failed({ret})")
 
+                sensor_attr = k_vicap_sensor_attr()
+                sensor_attr.dev_num = i
+                if 0x00 != kd_mpi_vicap_get_sensor_fd(sensor_attr):
+                    raise RuntimeError(f"sensor({i}) run error, get sensor fd failed({ret})")
+                sensor.fd = sensor_attr.sensor_fd
+
         for i in range(0, CAM_DEV_ID_MAX):
             if isinstance(cls._devs[i], Sensor):
                 sensor = cls._devs[i]
@@ -203,6 +209,9 @@ class Sensor:
         # self._dev_attr.mode = VICAP_WORK_OFFLINE_MODE
         self._dev_attr.input_type = VICAP_INPUT_TYPE_SENSOR
         self._dev_attr.mirror = def_mirror
+
+        self.fd = -1
+        self.sensor_name = ""
 
         self._is_started = False
 
@@ -290,9 +299,10 @@ class Sensor:
         self._dev_attr.dw_enable = 0
         self._dev_attr.cpature_frame = 0
 
-        sensor_name = uctypes.string_at(self._dev_attr.sensor_info.name)
+        self.sensor_name = uctypes.string_at(self._dev_attr.sensor_info.name)
 
-        if sensor_name.startswith("sc132gs_csi"):
+        if self.sensor_name.startswith("sc132gs_csi"):
+            self._dev_attr.pipe_ctrl.bits.ae_enable = 0 # disable ae
             self._dev_attr.pipe_ctrl.bits.dnr3_enable = 1 # disable 3dnr
 
         Sensor._handle_mcm_device()
@@ -845,6 +855,19 @@ class Sensor:
     def __read_reg(self, address):
         pass
 
+    def again(self, again = None):
+        if self.fd < 0:
+            raise RuntimeError("can't get sensor fd")
+
+        if again is None:
+            gain = k_sensor_gain()
+
+            kd_mpi_sensor_again_get(self.fd, gain)
+
+            return gain
+        else:
+            return kd_mpi_sensor_again_set(self.fd, again)
+
     # custom method
     def run(self):
         if not self._dev_attr.dev_enable:
@@ -874,6 +897,12 @@ class Sensor:
         ret = kd_mpi_vicap_init(self._dev_id)
         if ret:
             raise RuntimeError(f"sensor({self._dev_id}) run error, vicap init failed({ret})")
+
+        sensor_attr = k_vicap_sensor_attr()
+        sensor_attr.dev_num = self._dev_id
+        if 0x00 != kd_mpi_vicap_get_sensor_fd(sensor_attr):
+            raise RuntimeError(f"sensor({self._dev_id}) run error, get sensor fd failed({ret})")
+        self.fd = sensor_attr.sensor_fd
 
         print(f"sensor({self._dev_id}), mode {self._dev_attr.mode}, buffer_num {self._dev_attr.buffer_num}, buffer_size {self._dev_attr.buffer_size}")
         ret = kd_mpi_vicap_start_stream(self._dev_id)

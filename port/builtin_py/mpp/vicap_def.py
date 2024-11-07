@@ -345,3 +345,10 @@ def k_vicap_probe_config_parse(s, kwargs):
     s.fps = kwargs.get("fps", 0)
     s.def_mirror = kwargs.get("def_mirror", 0)
     s.name[:] = kwargs.get("name", "").encode()
+
+k_sensor_gain_desc = {
+    "gain": (0 | uctypes.ARRAY, 4 | uctypes.FLOAT32)  # Offset 0, array of 4 floats
+}
+
+def k_sensor_gain_parse(s, kwargs):
+    pass
