@@ -162,7 +162,7 @@ class YOLOv5(AIBase):
                     if ids!=-1:
                         mes=self.labels[ids]+" "+str(round(score,3))
                         img.draw_string_advanced(5,5,32,mes,color=(0,255,0))
-                        img.compress_for_ide()
+                    img.compress_for_ide()
                 elif self.task_type=="detect":
                     if res:
                         for det in res:
@@ -172,7 +172,7 @@ class YOLOv5(AIBase):
                             h = int(y2 - y1)
                             img.draw_rectangle(x,y,w,h,color=self.colors[int(det[5])],thickness=4)
                             img.draw_string_advanced( x , y-25,20," " + self.labels[int(det[5])] + " " + str(round(det[4],2)) , color=self.colors[int(det[5])])
-                            img.compress_for_ide()
+                    img.compress_for_ide()
                 elif self.task_type=="segment":
                     if res[0]:
                         mask_rgb=self.masks[0,:,:,1:4]
@@ -372,7 +372,7 @@ class YOLOv8(AIBase):
                     if ids!=-1:
                         mes=self.labels[ids]+" "+str(round(score,3))
                         img.draw_string_advanced(5,5,32,mes,color=(0,255,0))
-                        img.compress_for_ide()
+                    img.compress_for_ide()
                 elif self.task_type=="detect":
                     if res:
                         for det in res:
@@ -382,7 +382,7 @@ class YOLOv8(AIBase):
                             h = int(y2 - y1)
                             img.draw_rectangle(x,y,w,h,color=self.colors[int(det[5])],thickness=4)
                             img.draw_string_advanced( x , y-25,20," " + self.labels[int(det[5])] + " " + str(round(det[4],2)) , color=self.colors[int(det[5])])
-                            img.compress_for_ide()
+                    img.compress_for_ide()
                 elif self.task_type=="segment":
                     if res[0]:
                         mask_rgb=self.masks[0,:,:,1:4]
@@ -582,7 +582,7 @@ class YOLO11(AIBase):
                     if ids!=-1:
                         mes=self.labels[ids]+" "+str(round(score,3))
                         img.draw_string_advanced(5,5,32,mes,color=(0,255,0))
-                        img.compress_for_ide()
+                    img.compress_for_ide()
                 elif self.task_type=="detect":
                     if res:
                         for det in res:
@@ -592,7 +592,7 @@ class YOLO11(AIBase):
                             h = int(y2 - y1)
                             img.draw_rectangle(x,y,w,h,color=self.colors[int(det[5])],thickness=4)
                             img.draw_string_advanced( x , y-25,20," " + self.labels[int(det[5])] + " " + str(round(det[4],2)) , color=self.colors[int(det[5])])
-                            img.compress_for_ide()
+                    img.compress_for_ide()
                 elif self.task_type=="segment":
                     if res[0]:
                         mask_rgb=self.masks[0,:,:,1:4]
