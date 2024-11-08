@@ -27,7 +27,10 @@ class YOLOv5(AIBase):
         self.kmodel_path=kmodel_path
         self.labels=labels
         self.class_num=len(labels)
-        self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
+        if mode=="video":
+            self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
+        else:
+            self.rgb888p_size=[rgb888p_size[0],rgb888p_size[1]]
         self.model_input_size=model_input_size
         self.display_size=[ALIGN_UP(display_size[0],16),display_size[1]]
 
@@ -235,7 +238,10 @@ class YOLOv8(AIBase):
         self.kmodel_path=kmodel_path
         self.labels=labels
         self.class_num=len(labels)
-        self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
+        if mode=="video":
+            self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
+        else:
+            self.rgb888p_size=[rgb888p_size[0],rgb888p_size[1]]
         self.model_input_size=model_input_size
         self.display_size=[ALIGN_UP(display_size[0],16),display_size[1]]
 
@@ -445,7 +451,10 @@ class YOLO11(AIBase):
         self.kmodel_path=kmodel_path
         self.labels=labels
         self.class_num=len(labels)
-        self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
+        if mode=="video":
+            self.rgb888p_size=[ALIGN_UP(rgb888p_size[0],16),rgb888p_size[1]]
+        else:
+            self.rgb888p_size=[rgb888p_size[0],rgb888p_size[1]]
         self.model_input_size=model_input_size
         self.display_size=[ALIGN_UP(display_size[0],16),display_size[1]]
 
