@@ -14,6 +14,11 @@ LEFT        = const(1)
 RIGHT       = const(2)
 LEFT_RIGHT  = const(3)
 
+AUDIO_3A_ENABLE_NONE  = const(0)
+AUDIO_3A_ENABLE_ANS   = const(1)
+AUDIO_3A_ENABLE_AGC   = const(2)
+AUDIO_3A_ENABLE_AEC   = const(4)
+
 USE_EXTERN_BUFFER_CONFIG = True
 
 def _vb_pool_init(frames_per_buffer=1024):
@@ -114,6 +119,11 @@ class Stream:
 
     def volume(self, channel = LEFT_RIGHT,vol = None):
         pass
+
+    def enable_audio3a(self, audio3a_value):
+        pass
+
+
 
 class Write_stream(Stream):
     dev_chn_enable = {0:False,1:False}
@@ -325,6 +335,38 @@ class Read_stream(Stream):
             return ai_get_vol()
         else:
             return ai_set_vol(vol, channel)
+
+    def enable_audio3a(self, audio3a_value):
+        aio_vqe_enable = k_ai_vqe_enable()
+        if (audio3a_value & AUDIO_3A_ENABLE_ANS):
+            aio_vqe_enable.ans_enable = True
+        if (audio3a_value & AUDIO_3A_ENABLE_AGC):
+            aio_vqe_enable.agc_enable = True
+        if (audio3a_value & AUDIO_3A_ENABLE_AEC):
+            aio_vqe_enable.aec_enable = True
+
+        ret = kd_mpi_ai_set_vqe_attr(self._ai_dev, self._ai_chn,aio_vqe_enable)
+        if (0 != ret):
+            raise ValueError(("kd_mpi_ai_get_vqe_attr failed:%d")%(ret))
+
+        return ret
+
+    def audio3a_send_far_echo_frame(self, frame_data,data_len):
+        frame = k_audio_frame()
+        handle = kd_mpi_vb_get_block(-1, data_len, "")
+        phys_addr = kd_mpi_vb_handle_to_phyaddr(handle)
+        vir_data = kd_mpi_sys_mmap(phys_addr, data_len)
+
+        frame.len = data_len
+        uctypes.bytearray_at(vir_data, frame.len)[:] = frame_data
+        frame.phy_addr = phys_addr
+        kd_mpi_sys_munmap(vir_data,frame.len)
+
+        ret = kd_mpi_ai_send_far_echo_frame(self._ai_dev, self._ai_chn, frame,100)
+        # del buffer
+        kd_mpi_vb_release_block(handle)
+
+        return ret
 
 class PyAudio:
     #vb init flag

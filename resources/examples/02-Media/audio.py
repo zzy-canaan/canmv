@@ -39,6 +39,9 @@ def record_audio(filename, duration):
         stream.volume(RIGHT,85)
         print("volume :",stream.volume())
 
+        #启用音频3A功能：自动噪声抑制(ANS)
+        stream.enable_audio3a(AUDIO_3A_ENABLE_ANS)
+
         frames = []
         #采集音频数据并存入列表
         for i in range(0, int(RATE / CHUNK * duration)):
@@ -119,6 +122,9 @@ def loop_audio(duration):
         input_stream.volume(LEFT,70)
         input_stream.volume(RIGHT,85)
         print("input volume :",input_stream.volume())
+
+        #启用音频3A功能：自动噪声抑制(ANS)
+        input_stream.enable_audio3a(AUDIO_3A_ENABLE_ANS)
 
         #创建音频输出流
         output_stream = p.open(format=FORMAT,
