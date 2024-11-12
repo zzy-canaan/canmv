@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
+
+#include "modmachine.h"
 
 #define IOCTRL_WS2812_SET_RGB_VALUE     0x00
 

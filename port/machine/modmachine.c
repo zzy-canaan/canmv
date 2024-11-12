@@ -27,31 +27,17 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "py/runtime.h"
-#include "py/obj.h"
-
 #include <fcntl.h>
 #include <sys/mman.h>
 
+#include "py/runtime.h"
+#include "py/obj.h"
+
 #include "extmod/machine_mem.h"
-#include "machine_uart.h"
-#include "machine_pwm.h"
-#include "machine_wdt.h"
-#include "machine_pin.h"
-#include "machine_i2c.h"
-#include "machine_timer.h"
-#include "machine_adc.h"
-#include "machine_fft.h"
-#include "machine_fpioa.h"
-#include "machine_spi.h"
-#include "machine_spi_lcd.h"
-#include "machine_rtc.h"
-#include "machine_touch.h"
-#include "machine_led.h"
+
+#include "modmachine.h"
 
 #if MICROPY_PY_MACHINE
-
-extern const mp_obj_type_t machine_i2c_slave_type;
 
 STATIC mp_obj_t machine_reset(void) {
     int fd = open("/dev/mem", O_RDWR | O_SYNC);

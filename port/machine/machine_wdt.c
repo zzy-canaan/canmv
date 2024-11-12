@@ -26,13 +26,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
-#include "machine_wdt.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
+
+#include "modmachine.h"
 
 #define CTRL_WDT_GET_TIMEOUT    _IOW('W', 1, int) /* get timeout(in seconds) */
 #define CTRL_WDT_SET_TIMEOUT    _IOW('W', 2, int) /* set timeout(in seconds) */

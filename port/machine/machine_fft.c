@@ -26,19 +26,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
 #include <math.h>
-#include "sys/ioctl.h"
-#include "machine_fft.h"
-#include "mpi_fft_api.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
 
-
-
+#include "modmachine.h"
+#include "mpi_fft_api.h"
 
 typedef struct _machine_fft_obj_t {
     mp_obj_base_t base;

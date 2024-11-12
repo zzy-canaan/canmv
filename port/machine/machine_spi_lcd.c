@@ -7,15 +7,16 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "imlib.h"
+#include "imlib.h" // must include before misc.h
+
 #include "misc.h"
 #include "mphal.h"
 #include "mpprint.h"
 #include "py/obj.h"
 #include "py/runtime.h"
 
-#include "machine_spi.h"
-#include "machine_pin.h"
+#include "extmod/machine_spi.h"
+#include "modmachine.h"
 
 #include "py_image.h"
 #include "py_helper.h"
@@ -88,9 +89,11 @@ typedef struct _machine_spi_lcd_obj_t {
 
 const mp_obj_type_t machine_spi_lcd_type;
 
+extern const mp_obj_type_t machine_spi_type;
+extern const mp_machine_spi_p_t machine_hw_spi_p;
 // APIs ///////////////////////////////////////////////////////////////////////
 STATIC void machine_spi_lcd_spi_write(mp_obj_t spi_obj, const uint8_t *data, size_t size) {
-    mp_machine_spi_transfer(spi_obj, size, data, 0, NULL);
+    machine_hw_spi_p.transfer(spi_obj, size, data, NULL);
 }
 
 STATIC void machine_spi_lcd_gpio_write(mp_obj_t pin_obj, int state) {

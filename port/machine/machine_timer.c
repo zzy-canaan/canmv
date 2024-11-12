@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <math.h>
@@ -34,10 +35,12 @@
 #include <time.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include "sys/ioctl.h"
-#include "machine_timer.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
+
+#include "modmachine.h"
 
 #define TIMER_NUMBER_MAX 6
 

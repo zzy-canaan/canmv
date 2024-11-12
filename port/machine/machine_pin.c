@@ -26,15 +26,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
-#include "sys/ioctl.h"
-#include "machine_pin.h"
-#include "machine_fpioa.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
+
+#include "modmachine.h"
 
 #define PULL_NONE 0
 #define PULL_DOWN 1

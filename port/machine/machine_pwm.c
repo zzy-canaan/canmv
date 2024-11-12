@@ -26,13 +26,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
-#include "machine_pwm.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
+
+#include "modmachine.h"
 
 #define PWM_DEVICE_NAME     "/dev/pwm"
 #define PWM_CHANNEL_MAX     6

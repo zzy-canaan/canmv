@@ -26,14 +26,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
-#include "machine_fpioa.h"
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
-#include <sys/mman.h>
+
+#include "modmachine.h"
 
 #define MAX_PIN_NUM 64
 #define PIN_FUNC_NUM 5

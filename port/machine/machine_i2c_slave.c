@@ -3,16 +3,19 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "mpconfig.h"
+#include <sys/ioctl.h>
+
 #include "mpprint.h"
-#include "sys/ioctl.h"
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "py/runtime.h"
 #include "py/obj.h"
+
+#include "modmachine.h"
 
 #define I2C_SLAVE_IOCTL_SET_BUFFER_SIZE               0
 #define I2C_SLAVE_IOCTL_SET_ADDR                      1  

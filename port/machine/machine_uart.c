@@ -26,14 +26,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
-#include "machine_uart.h"
+#include <sys/ioctl.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
 #include "py/stream.h"
+
+#include "modmachine.h"
 
 #define IOC_SET_BAUDRATE    _IOW('U', 0x40, int)
 

@@ -27,20 +27,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
+#include <sys/ioctl.h>
 
 #include "mphal.h"
 #include "mpprint.h"
 #include "py/runtime.h"
 #include "py/obj.h"
 
-#include "machine_touch.h"
-
-#include "machine_i2c.h"
-#include "machine_pin.h"
+#include "modmachine.h"
 
 #define TOUCH_POINT_NUMBER_MAX 10
 

@@ -42,6 +42,7 @@ INC += -I$(TOP)/lib/crypto-algorithms
 INC += -I$(BUILD)
 INC += -I$(SDK_SRC_ROOT_DIR)/include
 INC += -I$(BOARD_DIR)
+INC += -Iinclude
 INC += -Iinclude/ai_cube
 INC += -Iinclude/ai_demo
 INC += -Iinclude/ai_demo/kws

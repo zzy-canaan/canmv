@@ -267,6 +267,9 @@ extern const struct _mp_print_t mp_stderr_print;
 // Enable the "machine" module, mostly for machine.mem*.
 #define MICROPY_PY_MACHINE             (1)
 
+#define MICROPY_PY_MACHINE_SPI          (1)
+#define MICROPY_PY_MACHINE_SOFTSPI      (0)
+
 #define MICROPY_PY_NNCASE_RUNTIME      (1)
 
 // uctypes

@@ -32,15 +32,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/ioctl.h"
+#include <sys/ioctl.h>
 
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "py/runtime.h"
 #include "py/obj.h"
 
-#include "machine_pin.h"
-#include "machine_i2c.h"
+#include "modmachine.h"
 
 #define I2C_CHANNEL_MAX 10
 
@@ -105,6 +104,8 @@ typedef struct {
 } machine_i2c_obj_t;
 
 static bool i2c_used[I2C_CHANNEL_MAX];
+
+STATIC machine_i2c_obj_t machine_i2c_obj[I2C_CHANNEL_MAX];
 
 STATIC void mp_hal_i2c_init(machine_i2c_obj_t *self) {
     uint32_t freq = self->freq;
@@ -525,7 +526,7 @@ STATIC void machine_i2c_arg_parse(machine_i2c_obj_t *self, size_t n_args, const 
 
 STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     int dev_index, dev_fd;
-    char dev_name[16];
+    char dev_name[32];
 
     mp_map_t kw_args;
     machine_i2c_obj_t *self = NULL;
@@ -535,23 +536,25 @@ STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, s
 
     dev_index = mp_obj_get_int(args[0]);
 
-    self = m_new_obj_with_finaliser(machine_i2c_obj_t);
+    if(I2C_CHANNEL_MAX <= dev_index) {
+        self = &machine_i2c_obj[dev_index];
+    } else {
+        mp_raise_ValueError(MP_ERROR_TEXT("invalid i2c number"));
+    }
+
+    if(i2c_used[dev_index] || (0x00 != self->status)) {
+        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("I2C %u busy"), dev_index);
+    }
+
     self->base.type = &machine_i2c_type;
     self->fd = -1;
     self->index = dev_index;
     self->status = 0;
+    self->soft_i2c = 0;
 
-    if(4 >= dev_index) {
-        /* Hardware I2C */
-        if(i2c_used[dev_index]) {
-            mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("I2C %u busy"), dev_index);
-        }
-        self->soft_i2c = 0;
-    } else if((I2C_CHANNEL_MAX - 1) >= dev_index) {
+    if((I2C_CHANNEL_MAX - 1) >= dev_index) {
         /* Software I2C */
         self->soft_i2c = 1;
-    } else {
-        mp_raise_ValueError(MP_ERROR_TEXT("invalid i2c number"));
     }
 
     machine_i2c_arg_parse(self, n_args - 1, args + 1, &kw_args);

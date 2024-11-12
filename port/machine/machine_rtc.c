@@ -26,13 +26,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
+
 #include "py/runtime.h"
 #include "py/obj.h"
-#include "machine_rtc.h"
+
 #include "shared/timeutils/timeutils.h"
+
+#include "modmachine.h"
 
 typedef struct {
     mp_obj_base_t base;
