@@ -559,7 +559,7 @@ class Display:
         osd_attr.global_alpha = layer_config.alpha
         osd_attr.pixel_format = pixelformat
 
-        if (pixelformat == PIXEL_FORMAT_ARGB_8888 or pixelformat == PIXEL_FORMAT_ABGR_8888):
+        if (pixelformat == PIXEL_FORMAT_ARGB_8888 or pixelformat == PIXEL_FORMAT_ABGR_8888 or pixelformat == PIXEL_FORMAT_BGRA_8888):
             osd_attr.stride = (width * 4) // 8
         elif (pixelformat == PIXEL_FORMAT_RGB_888 or pixelformat == PIXEL_FORMAT_BGR_888):
             osd_attr.stride = (width * 3) // 8
@@ -623,6 +623,8 @@ class Display:
 
         if _format == image.ARGB8888:
             pixelformat = PIXEL_FORMAT_ARGB_8888
+        elif _format == image.BGRA8888:
+            pixelformat = PIXEL_FORMAT_BGRA_8888
         elif _format == image.RGB888:
             pixelformat = PIXEL_FORMAT_RGB_888
         elif _format == image.RGB565:
@@ -634,7 +636,7 @@ class Display:
 
         stride = 1
 
-        if (pixelformat == PIXEL_FORMAT_ARGB_8888 or pixelformat == PIXEL_FORMAT_ABGR_8888):
+        if (pixelformat == PIXEL_FORMAT_ARGB_8888 or pixelformat == PIXEL_FORMAT_ABGR_8888 or pixelformat == PIXEL_FORMAT_BGRA_8888):
             stride = 4
         elif (pixelformat == PIXEL_FORMAT_RGB_888 or pixelformat == PIXEL_FORMAT_BGR_888):
             stride = 3
