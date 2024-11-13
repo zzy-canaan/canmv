@@ -348,7 +348,8 @@ int kd_mpi_vo_osd_rotation(int flag, k_video_frame_info *in, k_video_frame_info 
         .gdma_attr.work_mode = DMA_UNBIND,
         .gdma_attr.pixel_format =
             (in->v_frame.pixel_format == PIXEL_FORMAT_ARGB_8888 ||
-            in->v_frame.pixel_format == PIXEL_FORMAT_ABGR_8888) ? DMA_PIXEL_FORMAT_ARGB_8888 :
+            in->v_frame.pixel_format == PIXEL_FORMAT_ABGR_8888 ||
+            in->v_frame.pixel_format == PIXEL_FORMAT_BGRA_8888) ? DMA_PIXEL_FORMAT_ARGB_8888 :
             (in->v_frame.pixel_format == PIXEL_FORMAT_RGB_888 ||
             in->v_frame.pixel_format == PIXEL_FORMAT_BGR_888) ? DMA_PIXEL_FORMAT_RGB_888 :
             (in->v_frame.pixel_format == 300 || in->v_frame.pixel_format == 301) ? DMA_PIXEL_FORMAT_RGB_565:
