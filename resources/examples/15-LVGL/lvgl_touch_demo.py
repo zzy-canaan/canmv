@@ -60,8 +60,8 @@ def lvgl_init():
     lv.init()
     disp_drv = lv.disp_create(DISPLAY_WIDTH, DISPLAY_HEIGHT)
     disp_drv.set_flush_cb(disp_drv_flush_cb)
-    disp_img1 = image.Image(DISPLAY_WIDTH, DISPLAY_HEIGHT, image.ARGB8888)
-    disp_img2 = image.Image(DISPLAY_WIDTH, DISPLAY_HEIGHT, image.ARGB8888)
+    disp_img1 = image.Image(DISPLAY_WIDTH, DISPLAY_HEIGHT, image.BGRA8888)
+    disp_img2 = image.Image(DISPLAY_WIDTH, DISPLAY_HEIGHT, image.BGRA8888)
     disp_drv.set_draw_buffers(disp_img1.bytearray(), disp_img2.bytearray(), disp_img1.size(), lv.DISP_RENDER_MODE.DIRECT)
     tp = touch_screen()
 
