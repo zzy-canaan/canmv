@@ -436,7 +436,9 @@ class Display:
         vtotal = cls._connector_info.resolution.vtotal
         pclk = cls._connector_info.resolution.pclk
 
-        return pclk * 1000 // htotal // vtotal
+        fps = pclk * 1000 // htotal // vtotal
+
+        return fps if fps < 200 else 0
 
     @classmethod
     def _disable_layer(cls, layer):
@@ -658,7 +660,7 @@ class Display:
             try:
                 cls._layer_disp_buffers[layer] = MediaManager.Buffer.get(4 * cls._width * cls._height)
             except Exception as e:
-                raise RuntimeError(f"please increase Display.config(osd_num=)")
+                raise RuntimeError(f"get display buffer failed")
             # finally:
             #     print(f"get disp buffer {cls._layer_disp_buffers[layer]}")
 
@@ -671,7 +673,7 @@ class Display:
                 try:
                     cls._layer_rotate_buffer = MediaManager.Buffer.get(4 * cls._width * cls._height)
                 except Exception as e:
-                    raise RuntimeError(f"please increase Display.config(osd_num=)")
+                    raise RuntimeError(f"get rotate buffer failed")
                 # finally:
                 #     print(f"get rotate buffer {cls._layer_rotate_buffer}")
 

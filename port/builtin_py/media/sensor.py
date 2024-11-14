@@ -948,7 +948,7 @@ class Sensor:
         if (chn > CAM_CHN_ID_MAX - 1):
             raise AssertionError(f"invaild chn id {chn}, should < {CAM_CHN_ID_MAX - 1}")
 
-        if abs(self._dev_attr.sensor_info.fps - fps) > 5:
+        if fps != 0 and abs(self._dev_attr.sensor_info.fps - fps) > 3:
             self._chn_attr[chn].fps = fps
 
     def bind_info(self, x = 0, y = 0, chn = CAM_CHN_ID_0):
