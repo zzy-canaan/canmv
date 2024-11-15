@@ -43,6 +43,7 @@
 typedef struct {
     mp_obj_base_t base;
     int fd;
+    uint32_t timeout;
     uint32_t baudrate;
     uint8_t index;
     uint8_t bitwidth;
@@ -78,12 +79,13 @@ STATIC void machine_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_pri
 }
 
 STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_baudrate, ARG_bits, ARG_parity, ARG_stop };
+    enum { ARG_baudrate, ARG_bits, ARG_parity, ARG_stop, ARG_timeout };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 115200} },
         { MP_QSTR_bits, MP_ARG_INT, {.u_int = 8} },
         { MP_QSTR_parity, MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_stop, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -92,6 +94,11 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
     self->bitwidth = args[ARG_bits].u_int;
     self->parity = args[ARG_parity].u_int;
     self->stop = args[ARG_stop].u_int;
+
+    // set timeout
+    if (args[ARG_timeout].u_int != -1) {
+        self->timeout = args[ARG_timeout].u_int;
+    }
 
     struct uart_configure conf;
     conf.baud_rate = self->baudrate;
@@ -127,6 +134,7 @@ STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, 
     self->index = index;
     self->fd = fd;
     self->status = 1;
+    self->timeout = 0;
 
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
@@ -161,20 +169,35 @@ STATIC mp_uint_t machine_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t siz
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     machine_uart_obj_check(self);
 
-    size = read(self->fd, buf_in, size);
-    *errcode = 0;
+    int bytes_read = 0;
+    mp_uint_t curr_time_ms, time_out_ms = mp_hal_ticks_ms() + self->timeout;
 
-    return size;
+    do {
+        bytes_read += read(self->fd, buf_in + bytes_read, size - bytes_read);
+
+        curr_time_ms = mp_hal_ticks_ms();
+    } while((bytes_read != size) && (curr_time_ms < time_out_ms));
+
+    if(bytes_read <= 0) {
+        *errcode = MP_EAGAIN;
+        return MP_STREAM_ERROR;
+    }
+
+    return bytes_read;
 }
 
 STATIC mp_uint_t machine_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t size, int *errcode) {
     machine_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     machine_uart_obj_check(self);
 
-    write(self->fd, buf_in, size);
-    *errcode = 0;
+    int bytes_written = write(self->fd, buf_in, size);
 
-    return size;
+    if (bytes_written < 0) {
+        *errcode = MP_EAGAIN;
+        return MP_STREAM_ERROR;
+    }
+
+    return bytes_written;
 }
 
 STATIC mp_uint_t machine_uart_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
