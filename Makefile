@@ -32,6 +32,11 @@ copy_examples:
 	else \
 		rm -rf ${SDK_BUILD_IMAGES_DIR}/sdcard/main.py; \
 	fi;\
+	if [ -f $(SDK_CANMV_SRC_DIR)/resources/boot.py ]; then \
+		cp -f $(SDK_CANMV_SRC_DIR)/resources/boot.py ${SDK_BUILD_IMAGES_DIR}/sdcard/boot.py; \
+	else \
+		rm -rf ${SDK_BUILD_IMAGES_DIR}/sdcard/boot.py; \
+	fi;\
 	rsync -aq --delete --exclude='.git' $(SDK_CANMV_SRC_DIR)/resources/examples/ ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/
 
 .PHONY: copy_kmodels
