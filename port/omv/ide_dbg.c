@@ -32,6 +32,8 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/mman.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -73,6 +75,8 @@ static sem_t stdin_sem;
 static char stdin_ring_buffer[4096];
 static unsigned stdin_write_ptr = 0;
 static unsigned stdin_read_ptr = 0;
+
+static uint64_t sys_mem_total_size = 0;
 
 int usb_rx(void) {
     char c;
@@ -616,11 +620,31 @@ static ide_dbg_status_t ide_dbg_update(ide_dbg_state_t* state, const uint8_t* da
                     }
                     case USBDBG_ARCH_STR: {
                         char buffer[0x40];
+                        char unit;
+                        int value;
+
                         if (state->data_length != sizeof(buffer)) {
                             pr_verb("Warning: USBDBG_ARCH_STR data length %u, expected %lu", state->data_length, sizeof(buffer));
                         }
-                        snprintf(buffer, sizeof(buffer), "%s [%s:%08X%08X%08X]",
-                            OMV_ARCH_STR, OMV_BOARD_TYPE, 0, 0, 0); // TODO: UID
+
+                        // Determine the unit and value
+                        if (sys_mem_total_size >= (1 << 30)) {
+                            value = sys_mem_total_size / (1 << 30); // Convert to GB
+                            unit = 'G';
+                        } else if (sys_mem_total_size >= (1 << 20)) {
+                            value = sys_mem_total_size / (1 << 20); // Convert to MB
+                            unit = 'M';
+                        } else if (sys_mem_total_size >= (1 << 10)) {
+                            value = sys_mem_total_size / (1 << 10); // Convert to KB
+                            unit = 'K';
+                        } else {
+                            value = sys_mem_total_size; // Stay in bytes
+                            unit = 'B';
+                        }
+
+                        snprintf(buffer, sizeof(buffer), "%s [" OMV_BOARD_TYPE ":%08X%08X%08X]",
+                            OMV_ARCH_STR, value, unit, 0, 0, 0);
+
                         pr_verb("cmd: USBDBG_ARCH_STR %s", buffer);
                         usb_tx(buffer, sizeof(buffer));
                         break;
@@ -1167,6 +1191,17 @@ void sighandler(int sig) {
 
 void ide_dbg_init(void) {
     pr_info("IDE debugger built %s %s", __DATE__, __TIME__);
+
+    {
+#define MISC_DEV_CMD_GET_MEMORY_SIZE    (0x1024 + 6)
+
+        int fd = open("/dev/canmv_misc", O_RDONLY);
+        if(0 <= fd) {
+            ioctl(fd, MISC_DEV_CMD_GET_MEMORY_SIZE, &sys_mem_total_size);
+            close(fd);
+        }
+    }
+
     usb_cdc_fd = open("/dev/ttyUSB", O_RDWR);
     if (usb_cdc_fd < 0) {
         perror("open /dev/ttyUSB error");
