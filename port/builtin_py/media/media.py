@@ -178,7 +178,7 @@ class MediaManager:
         print("buffer pool : ", cls._vb_buffer_index)
         ret = kd_mpi_vb_set_config(cls._vb_buffer)
         if ret:
-            raise RuntimeError(f"MediaManager, vb config failed({ret})")
+            raise RuntimeError(f"MediaManager, vb config failed({ret}), at now please reboot the board to fix it.")
 
         supplement_config = k_vb_supplement_config()
         supplement_config.supplement_config |= VB_SUPPLEMENT_JPEG_MASK
@@ -188,7 +188,7 @@ class MediaManager:
 
         ret = kd_mpi_vb_init()
         if ret:
-            raise RuntimeError(f"MediaManager, vb init failed({ret})")
+            raise RuntimeError(f"MediaManager, vb init failed({ret}), at now please reboot the board to fix it.")
 
         ide_dbg_vo_wbc_init()
         cls._is_inited = True
