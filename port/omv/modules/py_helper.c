@@ -129,11 +129,15 @@ bool py_helper_keyword_int_maybe(uint n_args, const mp_obj_t *args, uint arg_ind
     bool ret;
     if (kw_arg) {
         ret = mp_obj_get_int_maybe(kw_arg->value, &tmp);
-        *value = tmp;
+        if(ret) {
+            *value = tmp;
+        }
         return ret;
     } else if (n_args > arg_index) {
         ret = mp_obj_get_int_maybe(args[arg_index], &tmp);
-        *value = tmp;
+        if(ret) {
+            *value = tmp;
+        }
         return ret;
     }
 
@@ -161,11 +165,15 @@ bool py_helper_keyword_float_maybe(uint n_args, const mp_obj_t *args, uint arg_i
     bool ret;
     if (kw_arg) {
         ret = mp_obj_get_float_maybe(kw_arg->value, &tmp);
-        *value = tmp;
+        if(ret) {
+            *value = tmp;
+        }
         return ret;
     } else if (n_args > arg_index) {
         ret = mp_obj_get_float_maybe(args[arg_index], &tmp);
-        *value = tmp;
+        if(ret) {
+            *value = tmp;
+        }
         return ret;
     }
 

@@ -7034,6 +7034,10 @@ void py_image_alloc(image_t *image, mp_map_t *kw_args)
 
     size_t size = image_size(image);
 
+    if(0x00 == size) {
+        mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("image invalid size: %d"), size);
+    }
+
     if (data_obj) {
         mp_get_buffer_raise(data_obj, &bufinfo, MP_BUFFER_READ);
         if (size > bufinfo.len)
