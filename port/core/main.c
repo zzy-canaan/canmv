@@ -437,7 +437,7 @@ bool command_line_mode = false;
 
 int main(int argc, char **argv) {
     // wait /dev/ttyUSB1 and /sdcard ready
-    usleep(1000000);
+    // usleep(1000000);
     if (argc == 1)
         ide_dbg_init();
     //dup2(usb_cdc_fd, STDOUT_FILENO);

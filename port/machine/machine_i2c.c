@@ -536,7 +536,7 @@ STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, s
 
     dev_index = mp_obj_get_int(args[0]);
 
-    if(I2C_CHANNEL_MAX <= dev_index) {
+    if(I2C_CHANNEL_MAX > dev_index) {
         self = &machine_i2c_obj[dev_index];
     } else {
         mp_raise_ValueError(MP_ERROR_TEXT("invalid i2c number"));
@@ -552,7 +552,7 @@ STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, s
     self->status = 0;
     self->soft_i2c = 0;
 
-    if((I2C_CHANNEL_MAX - 1) >= dev_index) {
+    if(5 >= dev_index) {
         /* Software I2C */
         self->soft_i2c = 1;
     }
