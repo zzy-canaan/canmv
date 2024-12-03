@@ -543,7 +543,8 @@ STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, s
     }
 
     if(i2c_used[dev_index] || (0x00 != self->status)) {
-        mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("I2C %u busy"), dev_index);
+        mp_printf(&mp_plat_print, "i2c%u maybe in use.\n", dev_index);
+        // mp_raise_msg_varg(&mp_type_OSError, MP_ERROR_TEXT("I2C %u busy"), dev_index);
     }
 
     self->base.type = &machine_i2c_type;
@@ -552,7 +553,7 @@ STATIC mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, s
     self->status = 0;
     self->soft_i2c = 0;
 
-    if(5 >= dev_index) {
+    if(5 <= dev_index) {
         /* Software I2C */
         self->soft_i2c = 1;
     }

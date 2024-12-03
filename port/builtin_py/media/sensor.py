@@ -354,13 +354,18 @@ class Sensor:
     # for snapshot
     @staticmethod
     def _release_image(img):
-        if isinstance(img, Sensor.dumped_image):
-            img.release()
+        if is_vb_mgmt_vicap_image(img):
+            vb_mgmt_release_vicap_frame(img)
 
     # for snapshot
     def _release_all_chn_image(self):
         for chn in range(0, VICAP_CHN_ID_MAX):
             self._release_image(self._imgs[chn])
+
+    def _dumped_image(self, chn = CAM_CHN_ID_0):
+        if is_vb_mgmt_vicap_image(self._imgs[chn]):
+            return self._imgs[chn]
+        return None
 
     def snapshot(self, chn = CAM_CHN_ID_0):
         if not self._dev_attr.dev_enable:
@@ -372,57 +377,52 @@ class Sensor:
         if (chn > CAM_CHN_ID_MAX - 1):
             raise AssertionError(f"invaild chn id {chn}, should < {CAM_CHN_ID_MAX - 1}")
 
-        if not isinstance(self._imgs[chn], self.dumped_image):
-            self._imgs[chn] = self.dumped_image(self._dev_id, chn)
-        else:
+        if is_vb_mgmt_vicap_image(self._imgs[chn]):
             self._release_image(self._imgs[chn])
+            self._imgs[chn] = None
 
-        status = 0
-        frame_info = k_video_frame_info()
-        try:
-            old = os.exitpoint(os.EXITPOINT_ENABLE_SLEEP)
-            virt_addr = 0
-            ret = kd_mpi_vicap_dump_frame(self._dev_id, chn, VICAP_DUMP_YUV, frame_info, 1000)
-            self._imgs[chn].push_phys(frame_info.v_frame.phys_addr[0])
-            if ret:
-                os.exitpoint(old)
-                raise RuntimeError(f"sensor({self._dev_id}) snapshot chn({chn}) failed({ret})")
-            status = 1
-            phys_addr = frame_info.v_frame.phys_addr[0]
-            img_width = frame_info.v_frame.width
-            img_height = frame_info.v_frame.height
-            fmt = frame_info.v_frame.pixel_format
-            if fmt == PIXEL_FORMAT_YUV_SEMIPLANAR_420:
-                img_size = img_width * img_height * 3 // 2
-                img_fmt = image.YUV420
-            elif fmt == PIXEL_FORMAT_RGB_888:
-                img_size = img_width * img_height * 3
-                img_fmt = image.RGB888
-            elif fmt == PIXEL_FORMAT_RGB_888_PLANAR:
-                img_size = img_width * img_height * 3
-                img_fmt = image.RGBP888
+        cfg = vb_mgmt_dump_vicap_config()
+        cfg.dev_num = self._dev_id
+        cfg.chn_num = chn
+        cfg.foramt = VICAP_DUMP_YUV
+        cfg.milli_sec = 1000
+
+        dumped_img = vb_mgmt_vicap_image()
+
+        ret = vb_mgmt_dump_vicap_frame(cfg, dumped_img)
+        if ret != 0:
+            raise RuntimeError(f"sensor({self._dev_id}) snapshot chn({chn}) failed({ret})")
+
+        self._imgs[chn] = dumped_img
+
+        phys_addr = dumped_img.vf_info.v_frame.phys_addr[0]
+        virt_addr = dumped_img.vf_info.v_frame.virt_addr[0]
+        img_width = dumped_img.vf_info.v_frame.width
+        img_height = dumped_img.vf_info.v_frame.height
+        fmt = dumped_img.vf_info.v_frame.pixel_format
+
+        if fmt == PIXEL_FORMAT_YUV_SEMIPLANAR_420:
+            img_fmt = image.YUV420
+        elif fmt == PIXEL_FORMAT_RGB_888:
+            img_fmt = image.RGB888
+        elif fmt == PIXEL_FORMAT_RGB_888_PLANAR:
+            img_fmt = image.RGBP888
+        else:
+            raise RuntimeError(f"sensor({self._dev_id}) snapshot chn({chn}) not support pixelformat({fmt})")
+
+        img = None
+
+        if virt_addr:
+            if self._is_rgb565[chn] and (img_fmt == image.RGB888):
+                img = image.Image(img_width, img_height, img_fmt, cvt_565 = True, alloc=image.ALLOC_VB, phyaddr=phys_addr, virtaddr=virt_addr, poolid=dumped_img.vf_info.pool_id)
+            elif self._is_grayscale[chn] and (img_fmt == image.YUV420):
+                img = image.Image(img_width, img_height, image.GRAYSCALE, cvt_565 = False, alloc=image.ALLOC_VB, phyaddr=phys_addr, virtaddr=virt_addr, poolid=dumped_img.vf_info.pool_id)
             else:
-                os.exitpoint(old)
-                raise RuntimeError(f"sensor({self._dev_id}) snapshot chn({chn}) not support pixelformat({fmt})")
-            virt_addr = kd_mpi_sys_mmap_cached(phys_addr, img_size)
-            self._imgs[chn].push_virt(virt_addr, img_size)
-            if virt_addr:
-                status = 2
+                img = image.Image(img_width, img_height, img_fmt, alloc=image.ALLOC_VB, phyaddr=phys_addr, virtaddr=virt_addr, poolid=dumped_img.vf_info.pool_id)
+        else:
+            raise RuntimeError(f"sensor({self._dev_id}) snapshot chn({chn}) mmap failed")
 
-                if self._is_rgb565[chn] and (img_fmt == image.RGB888):
-                    img = image.Image(img_width, img_height, img_fmt, cvt_565 = True, alloc=image.ALLOC_VB, phyaddr=phys_addr, virtaddr=virt_addr, poolid=frame_info.pool_id)
-                elif self._is_grayscale[chn] and (img_fmt == image.YUV420):
-                    img = image.Image(img_width, img_height, image.GRAYSCALE, cvt_565 = False, alloc=image.ALLOC_VB, phyaddr=phys_addr, virtaddr=virt_addr, poolid=frame_info.pool_id)
-                else:
-                    img = image.Image(img_width, img_height, img_fmt, alloc=image.ALLOC_VB, phyaddr=phys_addr, virtaddr=virt_addr, poolid=frame_info.pool_id)
-            else:
-                os.exitpoint(old)
-                raise RuntimeError(f"sensor({self._dev_id}) snapshot chn({chn}) mmap failed")
-
-            os.exitpoint(old)
-            return img
-        except Exception as e:
-            raise e
+        return img
 
     @wrap
     def skip_frames(self, **kwargs):

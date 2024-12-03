@@ -122,3 +122,22 @@ def k_video_frame_info(**kwargs):
     s = uctypes.struct(uctypes.addressof(buf), video_def.k_video_frame_info_desc, layout)
     video_def.k_video_frame_info_parse(s, kwargs)
     return s
+
+def vb_mgmt_dump_vicap_config(**kwargs):
+    layout = uctypes.NATIVE
+    buf = bytearray(uctypes.sizeof(video_def.vb_mgmt_dump_vicap_config_desc), layout)
+    s = uctypes.struct(uctypes.addressof(buf), video_def.vb_mgmt_dump_vicap_config_desc, layout)
+    video_def.vb_mgmt_dump_vicap_config_parse(s, kwargs)
+    return s
+
+def vb_mgmt_vicap_image(**kwargs):
+    layout = uctypes.NATIVE
+    buf = bytearray(uctypes.sizeof(video_def.vb_mgmt_vicap_image_desc), layout)
+    s = uctypes.struct(uctypes.addressof(buf), video_def.vb_mgmt_vicap_image_desc, layout)
+    video_def.vb_mgmt_vicap_image_parse(s, kwargs)
+    return s
+
+def is_vb_mgmt_vicap_image(obj):
+    if isinstance(obj, uctypes.struct):
+        return uctypes.sizeof(video_def.vb_mgmt_vicap_image_desc) == uctypes.sizeof(obj)
+    return False

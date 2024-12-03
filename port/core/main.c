@@ -859,9 +859,6 @@ main_thread_exit:
     extern void dma_dev_deinit(void);
     dma_dev_deinit();
 
-    extern void ide_dbg_vo_wbc_deinit(void);
-    ide_dbg_vo_wbc_deinit();
-
     extern void freetype_deinit(void);
     freetype_deinit();
 

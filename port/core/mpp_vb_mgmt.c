@@ -369,7 +369,7 @@ k_s32 vb_mgmt_pop_link_info(k_mpp_chn *src, k_mpp_chn *dst)
 // {
 //     mp_obj_t func;
 //     mp_obj_t arg;
-//     int maigc;
+//     int magic;
 //     int prio;
 // };
 
@@ -383,11 +383,11 @@ k_s32 vb_mgmt_pop_link_info(k_mpp_chn *src, k_mpp_chn *dst)
 //     {
 //         record = &vb_py_at_exit_records[i];
 
-//         if (VB_MGMT_PY_AT_EXIT_RECORD_IN_USE != record->maigc)
+//         if (VB_MGMT_PY_AT_EXIT_RECORD_IN_USE != record->magic)
 //         {
 //             record->func = func;
 //             record->arg = arg;
-//             record->maigc = VB_MGMT_PY_AT_EXIT_RECORD_IN_USE;
+//             record->magic = VB_MGMT_PY_AT_EXIT_RECORD_IN_USE;
 //             record->prio = mp_obj_get_int(prio);
 
 //             return mp_const_true;
@@ -405,9 +405,9 @@ k_s32 vb_mgmt_pop_link_info(k_mpp_chn *src, k_mpp_chn *dst)
 //     {
 //         record = &vb_py_at_exit_records[i];
 
-//         if ((VB_MGMT_PY_AT_EXIT_RECORD_IN_USE == record->maigc) && (mp_obj_equal(record->func, func)))
+//         if ((VB_MGMT_PY_AT_EXIT_RECORD_IN_USE == record->magic) && (mp_obj_equal(record->func, func)))
 //         {
-//             record->maigc = 0;
+//             record->magic = 0;
 //             record->func = mp_const_none;
 //             record->arg = mp_const_none;
 //             record->prio = 1024;
@@ -437,7 +437,7 @@ k_s32 vb_mgmt_pop_link_info(k_mpp_chn *src, k_mpp_chn *dst)
 //     {
 //         record = &vb_py_at_exit_records[i];
 
-//         if (VB_MGMT_PY_AT_EXIT_RECORD_IN_USE == record->maigc)
+//         if (VB_MGMT_PY_AT_EXIT_RECORD_IN_USE == record->magic)
 //         {
 //             if (mp_obj_is_callable(record->func))
 //             {
@@ -456,12 +456,209 @@ k_s32 vb_mgmt_pop_link_info(k_mpp_chn *src, k_mpp_chn *dst)
 //             }
 //         }
 
-//         record->maigc = 0;
+//         record->magic = 0;
 //         record->func = mp_const_none;
 //         record->arg = mp_const_none;
 //         record->prio = 1024;
 //     }
 // }
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+#include "mpi_vo_api.h"
+
+static int vo_video_layer_used[K_MAX_VO_LAYER_NUM] = {0};
+static int vo_osd_layer_used[K_MAX_VO_OSD_NUM] = {0};
+
+k_s32 vb_mgmt_enable_video_layer(k_u32 layer)
+{
+    if(K_MAX_VO_LAYER_NUM <= layer) {
+        printf("%s invalid layer.\n", __func__);
+
+        return -1;
+    }
+    vo_video_layer_used[layer] = 1;
+
+    return kd_mpi_vo_enable_video_layer(layer);
+}
+
+k_s32 vb_mgmt_disable_video_layer(k_u32 layer)
+{
+    if(K_MAX_VO_LAYER_NUM <= layer) {
+        printf("%s invalid layer.\n", __func__);
+
+        return -1;
+    }
+    vo_video_layer_used[layer] = 0;
+
+    return kd_mpi_vo_disable_video_layer(layer);
+}
+
+k_s32 vb_mgmt_enable_osd_layer(k_u32 layer)
+{
+    if(K_MAX_VO_OSD_NUM <= layer) {
+        printf("%s invalid layer.\n", __func__);
+
+        return -1;
+    }
+    vo_osd_layer_used[layer] = 1;
+
+    return kd_mpi_vo_osd_enable(layer);
+}
+
+k_s32 vb_mgmt_disable_osd_layer(k_u32 layer)
+{
+    if(K_MAX_VO_OSD_NUM <= layer) {
+        printf("%s invalid layer.\n", __func__);
+
+        return -1;
+    }
+    vo_osd_layer_used[layer] = 0;
+
+    return kd_mpi_vo_osd_disable(layer);
+}
+
+static void vb_mgmt_disable_vo_layers(void)
+{
+    for(size_t i = 0; i < (sizeof(vo_video_layer_used) / sizeof(vo_video_layer_used[0])); i++)
+    {
+        if(0x00 != vo_video_layer_used[i])
+        {
+            kd_mpi_vo_disable_video_layer(i);
+        }
+    }
+
+    for(size_t i = 0; i < (sizeof(vo_osd_layer_used) / sizeof(vo_osd_layer_used[0])); i++)
+    {
+        if(0x00 != vo_osd_layer_used[i])
+        {
+            kd_mpi_vo_osd_disable(i);
+        }
+    }
+}
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* mpp link mgmt */
+#define VB_MGMT_VICAP_IMAGE_MAX_CNT (32)
+#define VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE (0x1234DEAD)
+
+static vb_mgmt_vicap_image vicap_images[VB_MGMT_VICAP_IMAGE_MAX_CNT];
+
+k_s32 vb_mgmt_dump_vicap_frame(vb_mgmt_dump_vicap_config *cfg, vb_mgmt_vicap_image *image)
+{
+    vb_mgmt_vicap_image *_image = NULL;
+
+    if((NULL == cfg) || (NULL == image)) {
+        return 1;
+    }
+
+    for (int i = 0; i < VB_MGMT_VICAP_IMAGE_MAX_CNT; i++)
+    {
+        if (VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE != vicap_images[i].magic)
+        {
+            _image = &vicap_images[i];
+
+            _image->magic = VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE;
+
+            break;
+        }
+    }
+
+    if(NULL == _image) {
+        printf("no space to record vicap_image\n");
+
+        return 2;
+    }
+
+    memcpy(&_image->cfg, cfg, sizeof(*cfg));
+
+    if(0x00 != kd_mpi_vicap_dump_frame(cfg->dev_num, cfg->chn_num, cfg->foramt, &_image->vf_info, cfg->milli_sec)) {
+        printf("vicap dump dev %u chn %u failed.\n", cfg->dev_num, cfg->chn_num);
+
+        _image->magic = 0x00;
+
+        return 3;
+    }
+
+    k_u32 img_width = _image->vf_info.v_frame.width;
+    k_u32 img_height = _image->vf_info.v_frame.height;
+
+    switch (_image->vf_info.v_frame.pixel_format)
+    {
+        case PIXEL_FORMAT_YUV_SEMIPLANAR_420:
+        {
+            _image->image_size = img_width * img_height * 3 / 2;
+        }
+        break;
+        case PIXEL_FORMAT_RGB_888:
+        case PIXEL_FORMAT_RGB_888_PLANAR:
+        {
+            _image->image_size = img_width * img_height * 3;
+        }
+        break;
+        default:
+        {
+            printf("unsupport image format %u\n", _image->vf_info.v_frame.pixel_format);
+
+            kd_mpi_vicap_dump_release(_image->cfg.dev_num, _image->cfg.chn_num, &_image->vf_info);
+            _image->magic = 0x00;
+
+            return 4;
+        }
+    }
+
+    _image->vf_info.v_frame.virt_addr[0] = kd_mpi_sys_mmap_cached(_image->vf_info.v_frame.phys_addr[0], _image->image_size);
+
+    if(0x00 == _image->vf_info.v_frame.virt_addr[0])
+    {
+        printf("mmap failed.\n");
+
+        kd_mpi_vicap_dump_release(_image->cfg.dev_num, _image->cfg.chn_num, &_image->vf_info);
+        _image->magic = 0x00;
+
+        return 5;
+    }
+
+    memcpy(image, _image, sizeof(*_image));
+
+    return 0;
+}
+
+k_s32 vb_mgmt_release_vicap_frame(vb_mgmt_vicap_image *image)
+{
+    k_s32 ret = 0;
+
+    if((NULL == image) || (VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE != image->magic))
+    {
+        return 1;
+    }
+
+    if(0x00 != (ret += kd_mpi_sys_munmap(image->vf_info.v_frame.virt_addr[0], image->image_size)))
+    {
+        printf("release image failed(1).\n");
+    }
+
+    if(0x00 != (ret += kd_mpi_vicap_dump_release(image->cfg.dev_num, image->cfg.chn_num, &image->vf_info)))
+    {
+        printf("release image failed(2).\n");
+    }
+
+    if(0x00 == ret)
+    {
+        for (int i = 0; i < VB_MGMT_VICAP_IMAGE_MAX_CNT; i++)
+        {
+            if ((VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE == vicap_images[i].magic) && \
+                (image->vf_info.v_frame.phys_addr[0] == vicap_images[i].vf_info.v_frame.phys_addr[0]) && \
+                (image->vf_info.v_frame.virt_addr[0] == vicap_images[i].vf_info.v_frame.virt_addr[0]))
+            {
+                vicap_images[i].magic = 0x00;
+            }
+        }
+    }
+
+    return ret;
+}
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -492,23 +689,53 @@ k_s32 vb_mgmt_init(void)
 
     // for (int i = 0; i < VB_MGMT_PY_AT_EXIT_RECORD_MAX_CNT; i++)
     // {
-    //     if (VB_MGMT_PY_AT_EXIT_RECORD_IN_USE == vb_py_at_exit_records[i].maigc)
+    //     if (VB_MGMT_PY_AT_EXIT_RECORD_IN_USE == vb_py_at_exit_records[i].magic)
     //     {
     //         printf("maybe not call `vb_mgmt_py_at_exit`\n");
     //     }
-    //     vb_py_at_exit_records[i].maigc = 0;
+    //     vb_py_at_exit_records[i].magic = 0;
     // }
+
+    for (int i = 0; i < VB_MGMT_VICAP_IMAGE_MAX_CNT; i++)
+    {
+        if (VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE == vicap_images[i].magic)
+        {
+            printf("maybe not call vb_mgmt_deinit, the vicap images record %d is in use\n", i);
+
+            vb_mgmt_release_vicap_frame(&vicap_images[i]);
+        }
+
+        vicap_images[i].magic = 0;
+    }
 
     return 0;
 }
 
 k_s32 vb_mgmt_deinit(void)
 {
+    for (int i = 0; i < VB_MGMT_VICAP_IMAGE_MAX_CNT; i++)
+    {
+        if (VB_MGMT_VICAP_IMAGE_MAGIC_IN_USE == vicap_images[i].magic)
+        {
+            vb_mgmt_release_vicap_frame(&vicap_images[i]);
+        }
+    }
+
     for (int i = 0; i < VICAP_MAX_DEV_NUMS; i++)
     {
         vb_mgmt_deinit_vicap(i);
     }
     usleep(1000 * 100);
+
+    vb_mgmt_disable_vo_layers();
+
+    extern void ide_dbg_vo_wbc_deinit(void);
+    extern int ide_dbg_set_vo_wbc(int quality, int width, int height);
+
+    ide_dbg_set_vo_wbc(0, 0, 0);
+    ide_dbg_vo_wbc_deinit();
+
+    kd_display_reset();
 
     for (int i = 0; i < VB_MGMT_RECORD_MAX_CNT; i++)
     {

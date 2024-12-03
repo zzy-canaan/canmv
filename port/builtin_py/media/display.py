@@ -448,9 +448,9 @@ class Display:
         if isinstance(cls._layer_cfgs[layer], Display.LayerConfig):
             if cls._layer_configured[layer]:
                 if (Display.LAYER_VIDEO1 <= layer <= Display.LAYER_VIDEO2):
-                    kd_mpi_vo_disable_video_layer(layer)
+                    vb_mgmt_disable_video_layer(layer)
                 elif (Display.LAYER_OSD0 <= layer <= Display.LAYER_OSD3):
-                    kd_mpi_vo_osd_disable(layer - Display.LAYER_OSD0)
+                    vb_mgmt_disable_osd_layer(layer - Display.LAYER_OSD0)
             else:
                 print(f"error state on _disable_layer {layer}")
 
@@ -521,7 +521,7 @@ class Display:
         struct_copy(img_size, video_attr.img_size)
 
         kd_mpi_vo_set_video_layer_attr(layer_config.layer, video_attr)
-        kd_mpi_vo_enable_video_layer(layer_config.layer)
+        vb_mgmt_enable_video_layer(layer_config.layer)
 
         cls._layer_cfgs[layer_config.layer] = layer_config
         cls._layer_configured[layer_config.layer] = True
@@ -737,6 +737,6 @@ class Display:
         frame_info.v_frame.virt_addr[0] = cls._layer_disp_buffers[layer].virt_addr
 
         kd_mpi_vo_chn_insert_frame(layer, frame_info)
-        kd_mpi_vo_osd_enable(layer - Display.LAYER_OSD0)
+        vb_mgmt_enable_osd_layer(layer - Display.LAYER_OSD0)
 
         cls._layer_configured[layer] = True

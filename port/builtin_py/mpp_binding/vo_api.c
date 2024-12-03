@@ -32,6 +32,8 @@
 #include "py/obj.h"
 #include "mpi_vo_api.h"
 
+#include "mpp_vb_mgmt.h"
+
 #define FUNC_IMPL
 #define FUNC_FILE "vo_func_def.h"
 #include "func_def.h"

@@ -67,3 +67,29 @@ def k_video_frame_info_parse(s, kwargs):
     v_frame = kwargs.get("v_frame", {})
     s.pool_id = kwargs.get("pool_id", 0)
     s.mod_id = kwargs.get("mod_id", 0)
+
+vb_mgmt_dump_vicap_config_desc = {
+    "dev_num": 0 | uctypes.UINT32,
+    "chn_num": 4 | uctypes.UINT32,
+    "foramt": 8 | uctypes.UINT32,
+    "milli_sec": 12 | uctypes.UINT32,
+}
+
+def vb_mgmt_dump_vicap_config_parse(s, kwargs):
+    s.dev_num = kwargs.get("dev_num", 0)
+    s.chn_num = kwargs.get("chn_num", 0)
+    s.foramt = kwargs.get("foramt", 0)
+    s.milli_sec = kwargs.get("milli_sec", 1000)
+
+vb_mgmt_vicap_image_desc = {
+    "magic": 0 | uctypes.UINT64,
+    "image_size": 8 | uctypes.UINT64,
+    "cfg": (16, vb_mgmt_dump_vicap_config_desc),
+    "vf_info": (32, k_video_frame_info_desc),
+}
+
+def vb_mgmt_vicap_image_parse(s, kwargs):
+    s.magic = kwargs.get("magic", 0)
+    s.image_size = kwargs.get("image_size", 0)
+    # s.cfg = kwargs.get("cfg", {})
+    # s.vf_info = kwargs.get("vf_info", {})
