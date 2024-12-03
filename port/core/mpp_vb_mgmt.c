@@ -587,16 +587,36 @@ k_s32 vb_mgmt_dump_vicap_frame(vb_mgmt_dump_vicap_config *cfg, vb_mgmt_vicap_ima
     switch (_image->vf_info.v_frame.pixel_format)
     {
         case PIXEL_FORMAT_YUV_SEMIPLANAR_420:
-        {
+        case PIXEL_FORMAT_YVU_SEMIPLANAR_420:
+        case PIXEL_FORMAT_YVU_PLANAR_420:
             _image->image_size = img_width * img_height * 3 / 2;
-        }
-        break;
+            break;
+
         case PIXEL_FORMAT_RGB_888:
+        case PIXEL_FORMAT_BGR_888:
+        case PIXEL_FORMAT_YUV_PACKAGE_444:
+        case PIXEL_FORMAT_BGR_888_PLANAR:
         case PIXEL_FORMAT_RGB_888_PLANAR:
-        {
+        case PIXEL_FORMAT_YVU_PLANAR_444:
             _image->image_size = img_width * img_height * 3;
-        }
-        break;
+            break;
+
+        case PIXEL_FORMAT_RGB_565:
+        case PIXEL_FORMAT_BGR_565:
+        case PIXEL_FORMAT_RGB_565_LE:
+        case PIXEL_FORMAT_BGR_565_LE:
+        case PIXEL_FORMAT_ARGB_1555:
+        case PIXEL_FORMAT_ARGB_4444:
+        case PIXEL_FORMAT_ABGR_1555:
+        case PIXEL_FORMAT_ABGR_4444:
+            _image->image_size = img_width * img_height * 2;
+            break;
+
+        case PIXEL_FORMAT_ABGR_8888:
+        case PIXEL_FORMAT_BGRA_8888:
+            _image->image_size = img_width * img_height * 4;
+            break;
+
         default:
         {
             printf("unsupport image format %u\n", _image->vf_info.v_frame.pixel_format);
