@@ -57,6 +57,8 @@ typedef struct Tracker_box_center Tracker_box_center;
 typedef struct TtsZh TtsZh;
 typedef struct TtsZhOutput TtsZhOutput;
 
+typedef struct YoloDetInfo YoloDetInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -99,8 +101,12 @@ extern "C" {
     void tts_save_wav(float* wav_data,int wav_len,const char* wav_filename,int sample_rate);
     // for body_seg
     uint8_t* body_seg_postprocess(float* data, int num_class, FrameSize ori_shape, FrameSize dst_shape, uint8_t* color);
+    // for yolo seg
     SegOutputs yolov5_seg_postprocess(float *output0, float *output1, FrameSize frame_shape, FrameSize input_shape, FrameSize display_shape, int calss_num, float conf_thresh, float nms_thresh, float mask_thresh,int *box_cnt);
     SegOutputs yolov8_seg_postprocess(float *output0, float *output1, FrameSize frame_shape, FrameSize input_shape, FrameSize display_shape, int calss_num, float conf_thresh, float nms_thresh, float mask_thresh,int *box_cnt);
+    // for yolov8 det
+    YoloDetInfo* yolov8_det_postprocess(float *output0, FrameSize frame_shape, FrameSize input_shape, FrameSize display_shape, int calss_num, float conf_thresh, float nms_thresh, int max_box_cnt,int *box_cnt);
+
 #ifdef __cplusplus
 }
 #endif

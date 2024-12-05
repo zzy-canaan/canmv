@@ -78,6 +78,7 @@ copy_kmodels:
 	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/zh_fastspeech_1_f32.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
 	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/body_seg.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
 	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/multi_kws.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
+	@cp -r ${SDK_RTSMART_SRC_DIR}/libs/kmodel/ai_poc/kmodel/yolov8n_224.kmodel ${SDK_BUILD_IMAGES_DIR}/sdcard/examples/kmodel/
 
 .PHONY: copy_micropython
 copy_micropython:
