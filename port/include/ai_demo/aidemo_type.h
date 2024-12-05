@@ -135,4 +135,13 @@ struct TtsZhOutput
     int* len_data;
     size_t len_size;
 };
+
+struct YoloDetInfo{
+	int x;
+    int y;
+    int w;
+    int h; 
+	float confidence;
+	int index;
+};
 #endif // _AIDEMO_TYPE_H_
